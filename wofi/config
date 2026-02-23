@@ -1,0 +1,12 @@
+## Geometry
+mode=drun
+width=480px
+height=360px
+location=left  # Changed from 'left' to 'bottom' for south position
+orientation=vertical
+
+## Images
+allow_markup=true
+allow_images=true
+image_size=24
+

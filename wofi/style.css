@@ -1,0 +1,80 @@
+/* Everforest Dark (Hard) */
+
+@define-color background            #2b3339;
+@define-color surface               #323c41;
+@define-color surface-variant       #3a464c;
+@define-color surface-container     #374145;
+@define-color surface-container-high #3f4b50;
+
+@define-color primary               #a7c080;
+@define-color primary-container     #3c4841;
+
+@define-color secondary             #83c092;
+@define-color secondary-container   #354b44;
+
+@define-color tertiary              #e69875;
+@define-color tertiary-container    #4c3a32;
+
+@define-color error                 #e67e80;
+@define-color error-container       #4c3743;
+
+@define-color on-background         #d3c6aa;
+@define-color on-surface            #d3c6aa;
+@define-color on-surface-variant    #9da9a0;
+
+@define-color outline               #5c6a72;
+@define-color shadow                #000000;
+@define-color scrim                 #000000;
+
+/* Optional accent variants */
+@define-color blue                  #7fbbb3;
+@define-color aqua                  #83c092;
+@define-color yellow                #dbbc7f;
+@define-color orange                #e69875;
+@define-color red                   #e67e80;
+@define-color purple                #d699b6;
+
+window {
+    background-color: transparent;
+}
+
+#window {
+    margin: 0px;
+    border-radius: 18px;
+    background-color: @background; 
+    color: @on-background;
+    border: 2px solid @outline;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+#input {
+    margin: 10px;
+    background-color: alpha(@secondary-container, 0.7);
+    color: @on-background;
+    border-radius: 25px;
+    border: 0px solid @aqua;
+}
+
+#scroll {
+    margin-bottom: 15px;
+}
+
+#entry {
+    margin: 0px 10px;
+}
+
+#entry:selected {
+    background-color: @primary;
+    color: @background;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+}
+
+#entry > box {
+    margin-left: 16px;
+}
+
+#entry image {
+    padding-right: 10px;
+}
