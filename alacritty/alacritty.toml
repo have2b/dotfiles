@@ -1,0 +1,18 @@
+[general]
+live_config_reload = true
+
+[window]
+padding = { x = 16, y = 0 }
+dynamic_padding = true
+decorations = "None"
+opacity = 0.72
+startup_mode = "Maximized"
+
+[font]
+normal.family = "JetBrainsMono Nerd Font"
+size = 16
+
+[colors.primary]
+background = "#181825"
+[colors.cursor]
+cursor = "#94e2d5"
