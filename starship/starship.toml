@@ -1,0 +1,127 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = """
+[](c_gold)\
+$os\
+$username\
+[](fg:c_gold bg:c_aurora)\
+$directory\
+[](fg:c_aurora bg:c_pine)\
+$git_branch\
+$git_status\
+[](fg:c_pine bg:c_ocean)\
+$rust\
+$golang\
+$nodejs\
+$java\
+$python\
+[](fg:c_ocean bg:c_night)\
+$docker_context\
+[](fg:c_night bg:c_snow)\
+$time\
+[ ](fg:c_snow)\
+$line_break$character"""
+
+palette = 'nordic_aurora'
+
+[palettes.nordic_aurora]
+c_aurora = '#8fbcbb'
+c_frost = '#88c0d0'
+c_ocean = '#5e81ac'
+c_night = '#4c566a'
+c_pine = '#a3be8c'
+c_snow = '#d8dee9'
+c_text = '#eceff4'
+c_dark = '#2e3440'
+c_deep = '#3b4252'
+c_sunset = '#c8373a'
+c_gold = '#ebcb8b'
+c_amethyst = '#b64953'
+c_shadow = '#242933'
+
+[os]
+disabled = false
+format = "[$symbol]($style)"
+
+[os.symbols]
+Ubuntu = "[](fg:c_sunset bg:c_gold)"
+Fedora = "[](fg:c_ocean bg:c_gold)"
+NixOS = "[](fg:c_frost bg:c_gold)"
+Arch = "[](fg:c_ocean bg:c_gold)"
+
+[username]
+show_always = true
+style_user = "bg:c_gold fg:c_sunset"
+style_root = "bg:c_gold fg:c_sunset"
+format = '[ $user ]($style)'
+
+[directory]
+style = "fg:c_shadow bg:c_aurora"
+format = "[ $path]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+
+[git_branch]
+symbol = ""
+style = "bg:c_pine"
+truncation_length = 12
+truncation_symbol = "…"
+format = '[[ $symbol $branch(:$remote_branch) ](fg:c_deep bg:c_pine)]($style)'
+
+[git_status]
+style = "bg:c_pine"
+format = '[[($all_status$ahead_behind )](fg:c_amethyst bg:c_pine)]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:c_ocean"
+format = '[[ $symbol( $version) ](fg:c_dark bg:c_ocean)]($style)'
+
+[rust]
+symbol = ""
+style = "bg:c_ocean"
+format = '[[ $symbol( $version) ](fg:c_dark bg:c_ocean)]($style)'
+
+[golang]
+symbol = ""
+style = "bg:c_ocean"
+format = '[[ $symbol( $version) ](fg:c_dark bg:c_ocean)]($style)'
+
+[java]
+symbol = " "
+style = "bg:c_ocean"
+format = '[[ $symbol( $version) ](fg:c_dark bg:c_ocean)]($style)'
+
+[python]
+symbol = ""
+style = "bg:c_ocean"
+format = '[[ $symbol( $version) ](fg:c_dark bg:c_ocean)]($style)'
+
+[docker_context]
+symbol = ""
+style = "bg:c_night"
+format = '[[ $symbol( $context) ](fg:c_snow bg:c_night)]($style)'
+
+[time]
+disabled = false
+time_format = "%R"
+style = "bg:c_snow"
+format = '[[  $time ](fg:c_dark bg:c_snow)]($style)'
+
+[line_break]
+disabled = false
+
+[character]
+disabled = false
+success_symbol = '[](bold fg:c_pine)'
+error_symbol = '[](bold fg:c_amethyst)'
+vimcmd_symbol = '[](bold fg:c_pine)'
+vimcmd_replace_one_symbol = '[](bold fg:color_purple)'
+vimcmd_replace_symbol = '[](bold fg:c_sunset)'
+vimcmd_visual_symbol = '[](bold fg:c_gold)'
