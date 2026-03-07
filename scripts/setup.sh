@@ -1,94 +1,212 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ -n "${SUDO_USER:-}" ]]; then
-  ACTUAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-else
-  ACTUAL_HOME=$HOME
-fi
+########################################
+# Colors
+########################################
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[1;33m"
+BLUE="\033[1;34m"
+CYAN="\033[0;36m"
+RESET="\033[0m"
 
-DOTFILES_REPO="$ACTUAL_HOME/main/dotfiles"
-DOTFILES_DIR="~$ACTUAL_HOME/.config"
-
-# For the sddm
-SDDM_CONF_DIR="/etc/sddm.conf.d"
-SDDM_THEME_DIR="/usr/share/sddm/themes"
-
+########################################
+# Logging
+########################################
 log() {
-  echo "[INFO] $1"
+  echo -e "${BLUE}[INFO]${RESET} $1"
+}
+
+success() {
+  echo -e "${GREEN}[SUCCESS]${RESET} $1"
+}
+
+warn() {
+  echo -e "${YELLOW}[WARN]${RESET} $1"
 }
 
 error() {
-  echo "[ERROR] $1"
+  echo -e "${RED}[ERROR]${RESET} $1"
   exit 1
+}
+
+section() {
+  echo
+  echo -e "${CYAN}========== $1 ==========${RESET}"
+}
+
+########################################
+# Detect actual user
+########################################
+if [[ -n "${SUDO_USER:-}" ]]; then
+  ACTUAL_USER="$SUDO_USER"
+  ACTUAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+  ACTUAL_USER="$USER"
+  ACTUAL_HOME="$HOME"
+fi
+
+DOTFILES_REPO="$ACTUAL_HOME/main/dotfiles"
+CONFIG_DIR="$ACTUAL_HOME/.config"
+
+SDDM_CONF_DIR="/etc/sddm.conf.d"
+SDDM_THEME_DIR="/usr/share/sddm/themes"
+
+########################################
+# Checks
+########################################
+check_root() {
+  [[ $EUID -eq 0 ]] || error "Run this script with sudo."
 }
 
 check_command() {
   command -v "$1" >/dev/null 2>&1 || error "$1 is not installed."
 }
 
-check_root() {
-  if [[ $EUID -ne 0 ]]; then
-    error "Run this script with sudo."
-  fi
-}
-
-install_package() {
-  local pkg=$1
-  if pacman -Qi "$pkg" >/dev/null 2>&1; then
-    log "$pkg already installed"
-  else
-    log "Installing $pkg"
-    pacman -S --noconfirm "$pkg"
-  fi
-}
-
+########################################
+# Install packages
+########################################
 install_packages() {
   local to_install=()
 
   for pkg in "$@"; do
-    if ! pacman -Qi "$pkg" >/dev/null 2>$1; then
-      to_install+=("$pkg")
-    else
+    if pacman -Qi "$pkg" >/dev/null 2>&1; then
       log "$pkg already installed"
+    else
+      to_install+=("$pkg")
     fi
   done
 
-  if [ ${#to_install[@]} -gt 0 ]; then
-    log "Installing: ${to_install[*]}"
-    pacman -S --noconfirm "${to_install[@]}"
+  if [[ ${#to_install[@]} -gt 0 ]]; then
+    log "Installing packages: ${to_install[*]}"
+    pacman -S --noconfirm --needed "${to_install[@]}"
+    success "Package installation completed"
   fi
 }
 
+########################################
 # Setup SDDM
+########################################
 setup_sddm() {
-  log "Setting up SDDM"
+  section "SETTING UP SDDM"
+
+  install_packages sddm
+
   mkdir -p "$SDDM_CONF_DIR"
-  cat > "$SDDM_CONF_DIR/theme.conf" << EOF
-  [Theme]
-  Current=void
+
+  cat >"$SDDM_CONF_DIR/theme.conf" <<EOF
+[Theme]
+Current=void
 EOF
-  cp -r $DOTFILES_REPO/void/ $SDDM_THEME_DIR
+
+  rsync -av "$DOTFILES_REPO/void/" "$SDDM_THEME_DIR/void/"
+
   chmod 644 "$SDDM_CONF_DIR/theme.conf"
+
   systemctl enable sddm.service
+
+  success "SDDM configured"
 }
 
+########################################
+# Setup Hyprland
+########################################
 setup_hyprland() {
-  # Install core packages
-  install_packages unzip zip tar zoxide eza zsh jq grim slurp cliphist wl-clipboard
-  # Install app packages
-  install_packages kitty mako firefox yazi
-  # Install hypr ecosystem
-  install_packages hyprland hyprlock hyprpaper hyprlauncher
+  section "SETTING UP HYPRLAND"
+
+  install_packages \
+    unzip zip tar rsync \
+    zoxide eza zsh jq fzf \
+    grim slurp cliphist wl-clipboard
+
+  install_packages \
+    kitty mako firefox yazi
+
+  install_packages \
+    hyprland hyprlock hyprpaper hyprlauncher
+
+  mkdir -p "$CONFIG_DIR/hypr"
+
+  rsync -av "$DOTFILES_REPO/hypr/" "$CONFIG_DIR/hypr/"
+
+  success "Hyprland setup complete"
 }
 
+########################################
+# Misc tools
+########################################
+setup_misc() {
+  section "INSTALLING MISC TOOLS"
+
+  install_packages fastfetch btop starship lazygit lazydocker
+
+  success "Misc tools installed"
+}
+
+########################################
+# Install fonts
+########################################
+setup_fonts() {
+  section "INSTALLING FONTS"
+
+  local script="$DOTFILES_REPO/font/install_font.sh"
+
+  if [[ -f "$script" ]]; then
+    if [[ ! -x "$script" ]]; then
+      chmod +x "$script"
+    fi
+
+    bash "$script"
+    success "Fonts installed"
+  else
+    warn "Font installer not found at $script"
+  fi
+}
+
+########################################
+# Copy configuration
+########################################
+copy_config() {
+  section "SYNCING CONFIGURATION FILES"
+
+  mkdir -p "$CONFIG_DIR"
+
+  rsync -av "$DOTFILES_REPO/zsh/.zshrc" "$ACTUAL_HOME/.zshrc"
+
+  rsync -av "$DOTFILES_REPO/kitty/" "$CONFIG_DIR/kitty/"
+  rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
+  rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
+
+  mkdir -p "$CONFIG_DIR/starship"
+  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
+
+  chsh -s "$(which zsh)" "$ACTUAL_USER"
+
+  success "Configuration files installed"
+}
+
+########################################
+# Main
+########################################
 main() {
+  section "ARCH SYSTEM SETUP"
+
   check_root
-  install_package sddm
+  check_command pacman
+  check_command systemctl
+
+  if [[ ! -d "$DOTFILES_REPO" ]]; then
+    error "Dotfiles repo not found at $DOTFILES_REPO"
+  fi
+
   setup_sddm
   setup_hyprland
+  setup_misc
+  setup_fonts
+  copy_config
 
-  log "Setup completed"
+  success "System setup completed successfully"
 }
 
 main
