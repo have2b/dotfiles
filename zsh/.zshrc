@@ -92,6 +92,7 @@ alias lzg='lazygit'
 alias update='sudo pacman -Syu'
 alias warpc='warp-cli connect'
 alias warpdc='warp-cli disconnect'
+alias q="quarkus"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
@@ -119,9 +120,12 @@ autoload -U +X bashcompinit && bashcompinit
 export SDKMAN_DIR="$HOME/.sdkman"
 [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
 
-# Always work in a tmux session if Tmux is installed
-if which tmux 2>&1 >/dev/null; then
-  if [ $TERM != "screen-256color" ] && [  $TERM != "screen" ]; then
-    tmux attach -t default || tmux new -s default; exit
-  fi
+# Safer way to auto-start tmux
+if [[ -z "$TMUX" && "$TERM_PROGRAM" != "vscode" ]]; then
+    tmux attach-session -t default || tmux new-session -s default
 fi
+
+eval "$(/home/lvt/.local/bin/mise activate zsh)"
+
+source <(quarkus completion)
+
