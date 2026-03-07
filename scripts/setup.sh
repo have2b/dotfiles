@@ -139,7 +139,7 @@ setup_hyprland() {
 setup_misc() {
   section "INSTALLING MISC TOOLS"
 
-  install_packages fastfetch btop starship lazygit lazydocker
+  install_packages fastfetch btop starship lazygit lazydocker which flatpak
 
   success "Misc tools installed"
 }
@@ -187,6 +187,77 @@ copy_config() {
 }
 
 ########################################
+# Install mise
+########################################
+install_mise() {
+  section "INSTALLING MISE"
+
+  if command -v mise >/dev/null 2>&1; then
+    log "mise already installed"
+    return
+  fi
+
+  install_packages curl
+
+  log "Installing mise for user $ACTUAL_USER"
+
+  sudo -u "$ACTUAL_USER" bash -c "curl https://mise.run | sh"
+
+  success "mise installed"
+}
+
+########################################
+# Install Docker
+########################################
+install_docker() {
+  section "INSTALLING DOCKER"
+
+  install_packages docker docker-compose
+
+  log "Enabling Docker service"
+  systemctl enable --now docker.service
+
+  log "Adding $ACTUAL_USER to docker group"
+  usermod -aG docker "$ACTUAL_USER"
+
+  success "Docker installed and configured"
+}
+
+########################################
+# Install paru (AUR helper)
+########################################
+install_paru() {
+  section "INSTALLING PARU"
+
+  if command -v paru >/dev/null 2>&1; then
+    log "paru already installed"
+    return
+  fi
+
+  install_packages base-devel git
+
+  local tmp_dir="/tmp/paru-build"
+
+  log "Cloning paru repository"
+
+  sudo -u "$ACTUAL_USER" bash -c "
+    rm -rf $tmp_dir
+    git clone https://aur.archlinux.org/paru.git $tmp_dir
+  "
+
+  log "Building and installing paru"
+
+  sudo -u "$ACTUAL_USER" bash -c "
+    cd $tmp_dir
+    makepkg -si --noconfirm
+  "
+
+  rm -rf "$tmp_dir"
+
+  success "paru installed"
+}
+
+########################################
 # Main
 ########################################
 main() {
@@ -203,6 +274,9 @@ main() {
   setup_sddm
   setup_hyprland
   setup_misc
+  install_mise
+  install_docker
+  install_paru
   setup_fonts
   copy_config
 

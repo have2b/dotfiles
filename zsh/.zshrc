@@ -117,22 +117,6 @@ bindkey '^I' fzf-tab-complete
 # Environment
 # ==========================================
 export PATH="$HOME/.cargo/bin:$PATH"
-
-# Bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-[[ -s "$HOME/.bun/_bun" ]] && source "$HOME/.bun/_bun"
-
-# NVM
-export NVM_DIR="$HOME/.nvm"
-[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
-[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
-
-# SDKMAN
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] \
-  && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
 # Mise
 eval "$("$HOME/.local/bin/mise" activate zsh)"
 
