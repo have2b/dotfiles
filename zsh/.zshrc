@@ -1,127 +1,95 @@
-# ==========================================
-# Zinit Setup
-# ==========================================
-ZINIT_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zinit/zinit.git"
+# Zinit home directory where we will store zinit and plugins
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
 
-if [[ ! -d "$ZINIT_HOME" ]]; then
-    mkdir -p "$(dirname "$ZINIT_HOME")"
+# If Zinit not installed, then install it
+if [ ! -d "$ZINIT_HOME" ]; then
+    mkdir -p "$(dirname $ZINIT_HOME)"
     git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 fi
 
-source "$ZINIT_HOME/zinit.zsh"
+# Source/Load Zinit
+source "${ZINIT_HOME}/zinit.zsh"
 
-# ==========================================
-# Shell Options
-# ==========================================
-setopt AUTO_CD
-setopt INTERACTIVE_COMMENTS
-setopt EXTENDED_HISTORY
-setopt APPEND_HISTORY
-setopt SHARE_HISTORY
-setopt HIST_IGNORE_SPACE
-setopt HIST_IGNORE_ALL_DUPS
-setopt HIST_SAVE_NO_DUPS
-
-# ==========================================
-# History
-# ==========================================
-HISTFILE="$HOME/.zsh_history"
-HISTSIZE=5000
-SAVEHIST=5000
-
-# ==========================================
-# Completion System
-# ==========================================
-autoload -Uz compinit
-compinit -d "$HOME/.cache/zsh/zcompdump"
-
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-zstyle ':completion:*' menu select
-zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
-
-# ==========================================
-# Prompt
-# ==========================================
-if command -v starship >/dev/null 2>&1; then
-    eval "$(starship init zsh)"
-fi
-
-# ==========================================
-# Core Tools
-# ==========================================
-if command -v zoxide >/dev/null 2>&1; then
-    eval "$(zoxide init zsh)"
-fi
-
-if command -v fzf >/dev/null 2>&1; then
-    eval "$(fzf --zsh)"
-fi
-
-# ==========================================
-# Zinit Plugins
-# ==========================================
-
-# Syntax highlighting (load early)
-zinit ice wait=0 lucid
+# Adding plugins
 zinit light zsh-users/zsh-syntax-highlighting
-
-# Autosuggestions
-zinit ice wait lucid
-zinit light zsh-users/zsh-autosuggestions
-
-# Extra completions
-zinit ice wait lucid
 zinit light zsh-users/zsh-completions
-
-# fzf-tab (must load after compinit)
-zinit ice wait lucid
+zinit light zsh-users/zsh-autosuggestions
 zinit light Aloxaf/fzf-tab
-
-# command helper
-zinit ice wait lucid
 zinit light MichaelAquilina/zsh-you-should-use
 
-# OMZ snippets
-zinit ice wait lucid
+# Adding snippets
 zinit snippet OMZP::sudo
-zinit snippet OMZP::git
 zinit snippet OMZP::command-not-found
+zinit snippet OMZP::git
 
-# ==========================================
-# fzf-tab Configuration
-# ==========================================
-zstyle ':completion:*:git-checkout:*' sort false
-zstyle ':completion:*:descriptions' format '[%d]'
+# Load completions FIRST - This should come before any completion-related settings
+autoload -Uz compinit && compinit
 
-zstyle ':fzf-tab:complete:cd:*' fzf-preview \
-'eza -1 --color=always $realpath'
-
-zstyle ':fzf-tab:*' switch-group ',' '.'
-zstyle ':fzf-tab:*' fzf-command fzf
-zstyle ':fzf-tab:*' fzf-flags \
-'--height=40% --border --preview-window=right:60%'
-
-# ==========================================
 # Keybindings
-# ==========================================
 bindkey -e
-
 bindkey '^p' history-search-backward
 bindkey '^n' history-search-forward
-
 bindkey '^[[A' history-beginning-search-backward
 bindkey '^[[B' history-beginning-search-forward
+bindkey "^[[H" beginning-of-line    # Home
+bindkey "^[[F" end-of-line         # End
+bindkey "^[[1;5C" forward-word     # Ctrl + Right
+bindkey "^[[1;5D" backward-word    # Ctrl + Left
+bindkey '^I' fzf-tab-complete  # Make sure Tab is bound to fzf-tab
 
-bindkey "^[[H" beginning-of-line
-bindkey "^[[F" end-of-line
+# History for zsh and tmux
+HISTSIZE=5000
+HISTFILE=~/.zsh_history
+SAVEHIST=$HISTSIZE
+HISTDUP=erase
+setopt appendhistory
+setopt sharehistory
+setopt hist_ignore_space
+setopt hist_ignore_all_dups
+setopt hist_save_no_dups
+setopt hist_ignore_dups
+setopt hist_find_no_dups
 
-bindkey "^[[1;5C" forward-word
-bindkey "^[[1;5D" backward-word
+# Completion styling - FIXED: Removed 'menu no' which disables menu completion
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' menu select  # Changed from 'no' to 'select' for menu completion
 
-# ==========================================
-# Environment
-# ==========================================
-export PATH="$HOME/.cargo/bin:$PATH"
+# fzf-tab configuration
+# disable sort when completing `git checkout`
+zstyle ':completion:*:git-checkout:*' sort false
+# set descriptions format to enable group support
+zstyle ':completion:*:descriptions' format '[%d]'
+# set list-colors to enable filename colorizing
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+# preview directory's content with eza when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+# switch group using `,` and `.`
+zstyle ':fzf-tab:*' switch-group ',' '.'
+# fzf-tab default options
+zstyle ':fzf-tab:*' fzf-command fzf
+zstyle ':fzf-tab:*' fzf-flags --height=40% --border --preview-window=right:60%
+
+# Aliases
+alias ff='fastfetch'
+alias ls='eza'
+alias ll='eza -alF'
+alias la='eza -A'
+alias c='clear'
+alias lzd='lazydocker'
+alias lzg='lazygit'
+alias update='sudo pacman -Syu'
+alias warpc='warp-cli connect'
+alias warpdc='warp-cli disconnect'
+alias q="quarkus"
+
+# Shell integrations - MOVE these BEFORE fzf-tab initialization
+eval "$(zoxide init zsh)"
+eval "$(fzf --zsh)"
+
+# IMPORTANT: fzf-tab must be initialized last or it may conflict
+# Remove zinit cdreplay if you're having issues
+# zinit cdreplay -q
 
 # Mise
 if [[ -x "$HOME/.local/bin/mise" ]]; then
@@ -134,26 +102,6 @@ if command -v quarkus >/dev/null 2>&1; then
 fi
 
 # ==========================================
-# Aliases
-# ==========================================
-alias ls='eza'
-alias ll='eza -alF'
-alias la='eza -A'
-
-alias ff='fastfetch'
-alias c='clear'
-
-alias lzg='lazygit'
-alias lzd='lazydocker'
-
-alias update='sudo pacman -Syu'
-
-alias warpc='warp-cli connect'
-alias warpdc='warp-cli disconnect'
-
-alias q='quarkus'
-
-# ==========================================
 # tmux auto-start (safe)
 # ==========================================
 if command -v tmux >/dev/null 2>&1; then
@@ -162,7 +110,4 @@ if command -v tmux >/dev/null 2>&1; then
     fi
 fi
 
-# ==========================================
-# Bash compatibility
-# ==========================================
 autoload -U +X bashcompinit && bashcompinit

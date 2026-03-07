@@ -145,26 +145,6 @@ setup_misc() {
 }
 
 ########################################
-# Install fonts
-########################################
-setup_fonts() {
-  section "INSTALLING FONTS"
-
-  local script="$DOTFILES_REPO/font/install_font.sh"
-
-  if [[ -f "$script" ]]; then
-    if [[ ! -x "$script" ]]; then
-      chmod +x "$script"
-    fi
-
-    bash "$script"
-    success "Fonts installed"
-  else
-    warn "Font installer not found at $script"
-  fi
-}
-
-########################################
 # Copy configuration
 ########################################
 copy_config() {
@@ -277,7 +257,6 @@ main() {
   install_mise
   install_docker
   install_paru
-  setup_fonts
   copy_config
 
   success "System setup completed successfully"
