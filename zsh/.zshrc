@@ -30,31 +30,38 @@ HISTSIZE=5000
 SAVEHIST=5000
 
 # ==========================================
-# Completion System (fast init)
+# Completion System
 # ==========================================
 autoload -Uz compinit
-compinit -C
+compinit -d "$HOME/.cache/zsh/zcompdump"
 
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
 zstyle ':completion:*' menu select
 zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 
 # ==========================================
-# Prompt (fast)
+# Prompt
 # ==========================================
-eval "$(starship init zsh)"
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+fi
 
 # ==========================================
-# Core tool integrations
+# Core Tools
 # ==========================================
-eval "$(zoxide init zsh)"
-eval "$(fzf --zsh)"
+if command -v zoxide >/dev/null 2>&1; then
+    eval "$(zoxide init zsh)"
+fi
+
+if command -v fzf >/dev/null 2>&1; then
+    eval "$(fzf --zsh)"
+fi
 
 # ==========================================
-# Zinit Plugins (async)
+# Zinit Plugins
 # ==========================================
 
-# Syntax highlighting must load early
+# Syntax highlighting (load early)
 zinit ice wait=0 lucid
 zinit light zsh-users/zsh-syntax-highlighting
 
@@ -62,15 +69,15 @@ zinit light zsh-users/zsh-syntax-highlighting
 zinit ice wait lucid
 zinit light zsh-users/zsh-autosuggestions
 
-# Completions
+# Extra completions
 zinit ice wait lucid
 zinit light zsh-users/zsh-completions
 
-# fzf-tab
+# fzf-tab (must load after compinit)
 zinit ice wait lucid
 zinit light Aloxaf/fzf-tab
 
-# command usage helper
+# command helper
 zinit ice wait lucid
 zinit light MichaelAquilina/zsh-you-should-use
 
@@ -81,7 +88,7 @@ zinit snippet OMZP::git
 zinit snippet OMZP::command-not-found
 
 # ==========================================
-# fzf-tab configuration
+# fzf-tab Configuration
 # ==========================================
 zstyle ':completion:*:git-checkout:*' sort false
 zstyle ':completion:*:descriptions' format '[%d]'
@@ -111,17 +118,20 @@ bindkey "^[[F" end-of-line
 bindkey "^[[1;5C" forward-word
 bindkey "^[[1;5D" backward-word
 
-bindkey '^I' fzf-tab-complete
-
 # ==========================================
 # Environment
 # ==========================================
 export PATH="$HOME/.cargo/bin:$PATH"
-# Mise
-eval "$("$HOME/.local/bin/mise" activate zsh)"
 
-# Quarkus
-source <(quarkus completion)
+# Mise
+if [[ -x "$HOME/.local/bin/mise" ]]; then
+    eval "$("$HOME/.local/bin/mise" activate zsh)"
+fi
+
+# Quarkus completion (only if installed)
+if command -v quarkus >/dev/null 2>&1; then
+    source <(quarkus completion)
+fi
 
 # ==========================================
 # Aliases
@@ -146,8 +156,10 @@ alias q='quarkus'
 # ==========================================
 # tmux auto-start (safe)
 # ==========================================
-if [[ -z "$TMUX" && -z "$SSH_CONNECTION" && "$TERM_PROGRAM" != "vscode" ]]; then
-    tmux attach -t main 2>/dev/null || tmux new -s main
+if command -v tmux >/dev/null 2>&1; then
+    if [[ -z "$TMUX" && -z "$SSH_CONNECTION" && "$TERM_PROGRAM" != "vscode" ]]; then
+        tmux attach -t main 2>/dev/null || tmux new -s main
+    fi
 fi
 
 # ==========================================
