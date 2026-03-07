@@ -139,7 +139,7 @@ setup_hyprland() {
 setup_misc() {
   section "INSTALLING MISC TOOLS"
 
-  install_packages fastfetch btop starship lazygit lazydocker which flatpak
+  install_packages fastfetch btop lazygit lazydocker which flatpak
 
   success "Misc tools installed"
 }
@@ -158,32 +158,13 @@ copy_config() {
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
   rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
 
-  mkdir -p "$CONFIG_DIR/starship"
   rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
+
+  chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$ACTUAL_HOME/.zshrc" "$CONFIG_DIR"
 
   chsh -s "$(which zsh)" "$ACTUAL_USER"
 
   success "Configuration files installed"
-}
-
-########################################
-# Install mise
-########################################
-install_mise() {
-  section "INSTALLING MISE"
-
-  if command -v mise >/dev/null 2>&1; then
-    log "mise already installed"
-    return
-  fi
-
-  install_packages curl
-
-  log "Installing mise for user $ACTUAL_USER"
-
-  sudo -u "$ACTUAL_USER" bash -c "curl https://mise.run | sh"
-
-  success "mise installed"
 }
 
 ########################################
@@ -192,7 +173,7 @@ install_mise() {
 install_docker() {
   section "INSTALLING DOCKER"
 
-  install_packages docker docker-compose
+  install_packages docker
 
   log "Enabling Docker service"
   systemctl enable --now docker.service
@@ -254,7 +235,6 @@ main() {
   setup_sddm
   setup_hyprland
   setup_misc
-  install_mise
   install_docker
   install_paru
   copy_config
