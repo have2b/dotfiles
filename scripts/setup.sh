@@ -91,7 +91,7 @@ install_packages() {
 setup_sddm() {
   section "SETTING UP SDDM"
 
-  install_packages sddm
+  install_packages sddm rsync
 
   mkdir -p "$SDDM_CONF_DIR"
 
@@ -116,7 +116,7 @@ setup_hyprland() {
   section "SETTING UP HYPRLAND"
 
   install_packages \
-    unzip zip tar rsync \
+    unzip zip tar \
     zoxide eza zsh jq fzf \
     grim slurp cliphist wl-clipboard
 
