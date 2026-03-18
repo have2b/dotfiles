@@ -142,7 +142,10 @@ setup_niri() {
 setup_misc() {
   section "INSTALLING MISC TOOLS"
 
-  install_packages fastfetch btop lazygit lazydocker which flatpak pavucontrol bitwarden-cli openssh
+  install_packages \
+    fastfetch btop lazygit lazydocker \
+    which flatpak pavucontrol bitwarden-cli \
+    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool
 
   success "Misc tools installed"
 }
@@ -155,6 +158,7 @@ setup_git() {
 
   git config --global user.email "thanhlongvu156@gmail.com"
   git config --global user.name "have2b"
+  git config --global core.pager "cat"
 
   success "Git setup completed"
 }

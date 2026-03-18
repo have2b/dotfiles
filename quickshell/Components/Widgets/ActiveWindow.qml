@@ -23,6 +23,14 @@ Rectangle {
         }
     }
 
+    onActiveClassChanged: crossfadeAnim.restart()
+
+    SequentialAnimation {
+        id: crossfadeAnim
+        NumberAnimation { target: contentRow; property: "opacity"; to: 0; duration: 80; easing.type: Easing.InQuad }
+        NumberAnimation { target: contentRow; property: "opacity"; to: 1; duration: 120; easing.type: Easing.OutQuad }
+    }
+
     Row {
         id: contentRow
         anchors.verticalCenter: parent.verticalCenter

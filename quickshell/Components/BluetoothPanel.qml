@@ -31,6 +31,12 @@ PopupWindow {
             NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutQuad }
         }
 
+        property real _slideY: popup.visible ? 0 : 8
+        Behavior on _slideY {
+            NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutCubic }
+        }
+        transform: Translate { y: panelContent._slideY }
+
         // Drop shadow
         Rectangle {
             anchors.fill: parent

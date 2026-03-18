@@ -46,10 +46,15 @@ QtObject {
     // ── Animation ──────────────────────────────────────────────────────────
     readonly property int animationFast: 120
     readonly property int animationNormal: 180
+    readonly property int animationSlow: 280
 
     // ── Common ─────────────────────────────────────────────────────────────
     readonly property int normalWidth: 14
     readonly property int barHeight: 36
     readonly property int iconSize: 14
     readonly property string fontFamily: "JetBrainsMono Nerd Font"
+
+    // ── Radii ───────────────────────────────────────────────────────────────
+    readonly property int panelRadius: 12
+    readonly property int buttonRadius: 6
 }

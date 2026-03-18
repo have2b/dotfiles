@@ -2,6 +2,7 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import "../../" as App
 
 // System tray widget — shows StatusNotifierItem icons (fcitx5, etc.)
@@ -68,6 +69,19 @@ Item {
                     anchor.rect.y: App.Constants.barHeight
                     anchor.rect.width: trayIcon.width
                     anchor.rect.height: 0
+                }
+
+                // ── Tooltip ──────────────────────────────────────────────────
+                ToolTip {
+                    id: iconTooltip
+                    visible: iconMouse.containsMouse && text !== ""
+                    delay: 600
+                    timeout: 4000
+                    text: {
+                        const tt = trayIcon.item.tooltip
+                        if (tt && tt.title && tt.title !== "") return tt.title
+                        return trayIcon.item.id ?? ""
+                    }
                 }
 
                 // ── Mouse handling ───────────────────────────────────────────

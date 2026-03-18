@@ -154,6 +154,13 @@ Item {
                     font.family: App.Constants.fontFamily
                     anchors.verticalCenter: parent.verticalCenter
 
+                    // Reset position when track changes (new title may be shorter/longer)
+                    onImplicitWidthChanged: {
+                        scrollAnimation.stop()
+                        x = 0
+                        scrollAnimation.restart()
+                    }
+
                     // Scrolling animation when text is too long
                     SequentialAnimation {
                         id: scrollAnimation
@@ -168,7 +175,7 @@ Item {
                             from: 0
                             to: -(titleText.implicitWidth - 130)
                             duration: Math.max(titleText.implicitWidth - 130, 100) * 40
-                            easing.type: Easing.Linear
+                            easing.type: Easing.InOutSine
                         }
 
                         PauseAnimation { duration: 800 }
@@ -179,7 +186,7 @@ Item {
                             from: -(titleText.implicitWidth - 130)
                             to: 0
                             duration: Math.max(titleText.implicitWidth - 130, 100) * 40
-                            easing.type: Easing.Linear
+                            easing.type: Easing.InOutSine
                         }
                     }
                 }
@@ -187,17 +194,30 @@ Item {
 
             // Progress bar
             Rectangle {
+                id: progressTrack
                 Layout.preferredWidth: 40
-                Layout.preferredHeight: 2
+                Layout.preferredHeight: 3
                 Layout.alignment: Qt.AlignVCenter
-                radius: 1
+                radius: 1.5
                 color: App.Constants.surface
 
                 Rectangle {
+                    id: progressFill
                     height: parent.height
                     width: parent.width * root.displayProgress
-                    radius: 1
+                    radius: 1.5
                     color: App.Constants.accent
+                }
+
+                // Playhead dot at fill end
+                Rectangle {
+                    width: 4
+                    height: 4
+                    radius: 2
+                    color: App.Constants.accent
+                    anchors.verticalCenter: parent.verticalCenter
+                    x: progressFill.width - 2
+                    visible: root.displayProgress > 0 && root.displayProgress < 1
                 }
             }
 

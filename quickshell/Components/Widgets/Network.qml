@@ -18,8 +18,8 @@ Rectangle {
         if (connectionType === "ethernet") return ""   // 󰈀 nf-md-ethernet
         if (connectionType === "wifi") {
             if (signalStrength > 75) return "󰤨"        // nf-md-wifi_strength_4
-            if (signalStrength > 50) return "󰤢"        // nf-md-wifi_strength_3
-            if (signalStrength > 25) return "󰤟"        // nf-md-wifi_strength_2
+            if (signalStrength > 50) return "󰤥"        // nf-md-wifi_strength_3
+            if (signalStrength > 25) return "󰤢"        // nf-md-wifi_strength_2
             return "󰤟"                                  // nf-md-wifi_strength_1
         }
         return "󰤮"                                      // nf-md-wifi_off

@@ -35,6 +35,12 @@ PopupWindow {
             NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutQuad }
         }
 
+        property real _slideY: popup.visible ? 0 : 8
+        Behavior on _slideY {
+            NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutCubic }
+        }
+        transform: Translate { y: panelContent._slideY }
+
         // Drop shadow simulation
         Rectangle {
             anchors.fill: parent
@@ -195,6 +201,30 @@ PopupWindow {
                                 border.width: 1
 
                                 Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
+
+                                // Entrance animation: slide up + fade in
+                                opacity: 0
+                                property real _slideY: 12
+                                transform: Translate { y: notifCard._slideY }
+
+                                Component.onCompleted: {
+                                    entranceOpacity.start()
+                                    entranceSlide.start()
+                                }
+                                NumberAnimation {
+                                    id: entranceOpacity
+                                    target: notifCard; property: "opacity"
+                                    from: 0; to: 1
+                                    duration: App.Constants.animationNormal
+                                    easing.type: Easing.OutQuad
+                                }
+                                NumberAnimation {
+                                    id: entranceSlide
+                                    target: notifCard; property: "_slideY"
+                                    from: 12; to: 0
+                                    duration: App.Constants.animationNormal
+                                    easing.type: Easing.OutCubic
+                                }
 
                                 MouseArea {
                                     id: cardHover

@@ -32,7 +32,13 @@ QtObject {
     }
 
     function dismiss(notification) {
-        if (notification) notification.dismiss()
+        if (notification) {
+            notification.dismiss()
+            // Keep _lastSeenCount consistent: if it now exceeds the remaining
+            // count, clamp it down so the unread badge stays accurate.
+            if (_lastSeenCount > count - 1)
+                _lastSeenCount = Math.max(0, count - 1)
+        }
     }
 
     function dismissAll() {

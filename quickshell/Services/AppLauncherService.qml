@@ -9,6 +9,19 @@ QtObject {
     property bool visible: false
     property string searchText: ""
 
+    // ── Search debounce ─────────────────────────────────────────────────────
+    property string _pendingSearch: ""
+    property var _debounceTimer: Timer {
+        interval: 80
+        repeat: false
+        onTriggered: root.searchText = root._pendingSearch
+    }
+
+    function requestSearch(text) {
+        _pendingSearch = text
+        _debounceTimer.restart()
+    }
+
     function open() {
         searchText = ""
         visible = true

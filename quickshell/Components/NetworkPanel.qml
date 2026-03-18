@@ -31,6 +31,12 @@ PopupWindow {
             NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutQuad }
         }
 
+        property real _slideY: popup.visible ? 0 : 8
+        Behavior on _slideY {
+            NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutCubic }
+        }
+        transform: Translate { y: panelContent._slideY }
+
         // Drop shadow
         Rectangle {
             anchors.fill: parent
@@ -160,8 +166,8 @@ PopupWindow {
                             if (App.NetworkService.connectionType === "ethernet") return ""
                             const s = App.NetworkService.signalStrength
                             if (s > 75) return "󰤨"
-                            if (s > 50) return "󰤢"
-                            if (s > 25) return "󰤟"
+                            if (s > 50) return "󰤥"
+                            if (s > 25) return "󰤢"
                             return "󰤟"
                         }
                         color: App.Constants.primary
@@ -284,8 +290,8 @@ PopupWindow {
                                         text: {
                                             const s = modelData.signal
                                             if (s > 75) return "󰤨"
-                                            if (s > 50) return "󰤢"
-                                            if (s > 25) return "󰤟"
+                                            if (s > 50) return "󰤥"
+                                            if (s > 25) return "󰤢"
                                             return "󰤟"
                                         }
                                         color: modelData.inUse ? App.Constants.primary : App.Constants.textDim

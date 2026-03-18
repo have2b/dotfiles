@@ -9,8 +9,8 @@ PanelWindow {
     id: root
 
     // ── Dimensions ───────────────────────────────────────────────────────────
-    readonly property int launcherW: 520
-    readonly property int launcherH: 440
+    readonly property int launcherW: 480
+    readonly property int launcherH: 360
 
     // ── Center on screen via anchors + margins ───────────────────────────────
     anchors.top: true
@@ -58,6 +58,15 @@ PanelWindow {
         border.color: App.Constants.panelBorder
         border.width: 1
         clip: true
+
+        opacity: root.visible ? 1.0 : 0.0
+        scale:   root.visible ? 1.0 : 0.96
+        Behavior on opacity {
+            NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutQuad }
+        }
+        Behavior on scale {
+            NumberAnimation { duration: App.Constants.animationNormal; easing.type: Easing.OutCubic }
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -113,7 +122,7 @@ PanelWindow {
                         rightPadding: 0
                         selectByMouse: true
 
-                        onTextChanged: App.AppLauncherService.searchText = text
+                        onTextChanged: App.AppLauncherService.requestSearch(text)
 
                         Keys.onEscapePressed: App.AppLauncherService.close()
                         Keys.onReturnPressed: {

@@ -19,6 +19,9 @@ ShellRoot {
     id: bar
   }
 
+  // Shared anchor rect — all right-edge panels attach to the same point
+  readonly property rect panelAnchorRect: Qt.rect(bar.width - 1, 0, 1, bar.implicitHeight)
+
   AppLauncher {
     id: appLauncher
   }
@@ -26,18 +29,18 @@ ShellRoot {
   NotificationCenter {
     id: notificationCenter
     anchor.window: bar
-    anchor.rect: Qt.rect(bar.width - 1, 0, 1, bar.implicitHeight)
+    anchor.rect: root.panelAnchorRect
   }
 
   NetworkPanel {
     id: networkPanel
     anchor.window: bar
-    anchor.rect: Qt.rect(bar.width - 1, 0, 1, bar.implicitHeight)
+    anchor.rect: root.panelAnchorRect
   }
 
   BluetoothPanel {
     id: bluetoothPanel
     anchor.window: bar
-    anchor.rect: Qt.rect(bar.width - 1, 0, 1, bar.implicitHeight)
+    anchor.rect: root.panelAnchorRect
   }
 }
