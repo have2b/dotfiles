@@ -1,0 +1,63 @@
+* {
+  font-family: JetBrainsMono Nerd Font, monospace;
+  font-size: 13px;
+  min-height: 0;
+}
+
+/* Main bar */
+window#waybar {
+  background-color: #1e1e2e;
+  color: #cdd6f4;
+  padding: 2px 6px;
+  border-bottom: 1px solid #ffffff;
+  border-radius: 0 0 8px 8px;
+}
+
+/* All modules spacing */
+#clock,
+#battery,
+#network,
+#cpu,
+#memory,
+#wireplumber,
+#tray,
+#window,
+#custom-launcher {
+  padding: 0 12px;
+  margin: 0 4px;
+}
+
+#custom-launcher {
+  color: #1793d1;
+}
+
+
+/* Workspace buttons */
+#workspaces button {
+  padding: 4px;
+  margin: 0 3px;
+  border-radius: 6px;
+  color: #cdd6f4;
+  background: transparent;
+}
+
+/* Active workspace */
+#workspaces button.active {
+  background-color: #89b4fa;
+  color: #1e1e2e;
+}
+
+/* Hover effect */
+#workspaces button:hover {
+  background-color: #313244;
+}
+
+/* Active window title */
+#window {
+  padding-left: 10px;
+}
+
+/* Tray spacing */
+#tray > .passive {
+  margin: 0 3px;
+}

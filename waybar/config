@@ -1,0 +1,64 @@
+{
+  "layer": "top",
+  "position": "top",
+  "height": 32,
+  "reload_style_on_change": true,
+
+  "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "battery", "cpu", "memory", "wireplumber", "tray"],
+
+  "custom/launcher": {
+    "format": "󰣇",
+    "tooltip": false,
+    "on-click": "wofi --show drun"
+  },
+
+  "hyprland/workspaces": {
+    "disable-scroll": true,
+    "all-outputs": true
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "icon": true,
+    "icon-size": 16,
+    "max-length": 60
+  },
+
+  "clock": {
+    "format": "{:%H:%M  %d-%m-%Y}",
+    "tooltip-format": "<big>{:%Y %B}</big>\n<tt>{calendar}</tt>"
+  },
+
+  "network": {
+    "format-wifi": "  {signalStrength}%",
+    "format-ethernet": "󰈀  Connected",
+    "format-disconnected": "  Offline"
+  },
+
+  "battery": {
+    "format": "{capacity}%",
+    "format-charging": " {capacity}%",
+    "format-full": "  {capacity}%"
+  },
+
+  "cpu": {
+    "format": " {usage}%"
+  },
+
+  "memory": {
+    "format": "󰧑 {used}MB"
+  },
+
+  "wireplumber": {
+    "format": "{icon} {volume}%",
+    "format-muted": " {volume}%",
+    "format-icons": ["", "", ""],
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+  },
+
+  "tray": {
+    "spacing": 10
+  }
+}

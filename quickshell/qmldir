@@ -1,0 +1,7 @@
+singleton Constants 1.0 Constants.qml
+singleton MediaService 1.0 Services/MediaService.qml
+singleton NotificationService 1.0 Services/NotificationService.qml
+singleton NetworkService 1.0 Services/NetworkService.qml
+singleton BluetoothService 1.0 Services/BluetoothService.qml
+singleton AudioService 1.0 Services/AudioService.qml
+singleton AppLauncherService 1.0 Services/AppLauncherService.qml

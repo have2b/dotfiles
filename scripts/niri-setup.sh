@@ -110,10 +110,10 @@ EOF
 }
 
 ########################################
-# Setup Hyprland
+# Setup Niri
 ########################################
-setup_hyprland() {
-  section "SETTING UP HYPRLAND"
+setup_niri() {
+  section "SETTING UP NIRI"
 
   install_packages \
     unzip zip tar \
@@ -121,16 +121,19 @@ setup_hyprland() {
     grim slurp cliphist wl-clipboard
 
   install_packages \
-    kitty mako firefox yazi
+    quickshell alacritty firefox yazi
+
+  install_packages upower
+  systemctl enable upower.service
 
   install_packages \
-    hyprland hyprlock hyprpaper hyprlauncher
+    niri
 
-  mkdir -p "$CONFIG_DIR/hypr"
+  mkdir -p "$CONFIG_DIR/niri"
 
-  rsync -av "$DOTFILES_REPO/hypr/" "$CONFIG_DIR/hypr/"
+  rsync -av "$DOTFILES_REPO/niri/" "$CONFIG_DIR/niri/"
 
-  success "Hyprland setup complete"
+  success "Niri setup complete"
 }
 
 ########################################
@@ -139,7 +142,7 @@ setup_hyprland() {
 setup_misc() {
   section "INSTALLING MISC TOOLS"
 
-  install_packages fastfetch btop lazygit lazydocker which flatpak
+  install_packages fastfetch btop lazygit lazydocker which flatpak pavucontrol
 
   success "Misc tools installed"
 }
@@ -153,8 +156,9 @@ copy_config() {
   mkdir -p "$CONFIG_DIR"
 
   rsync -av "$DOTFILES_REPO/zsh/.zshrc" "$ACTUAL_HOME/.zshrc"
+  rsync -av "$DOTFILES_REPO/quickshell" "$ACTUAL_HOME/quickshell"
 
-  rsync -av "$DOTFILES_REPO/kitty/" "$CONFIG_DIR/kitty/"
+  rsync -av "$DOTFILES_REPO/alacritty/" "$CONFIG_DIR/alacritty/"
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
   rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
 
