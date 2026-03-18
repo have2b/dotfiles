@@ -142,9 +142,21 @@ setup_hyprland() {
 setup_misc() {
   section "INSTALLING MISC TOOLS"
 
-  install_packages fastfetch btop lazygit lazydocker which flatpak pavucontrol
+  install_packages fastfetch btop lazygit lazydocker which flatpak pavucontrol bitwarden-cli openssh
 
   success "Misc tools installed"
+}
+
+########################################
+# Git setup
+########################################
+setup_git() {
+  section "GIT SETUP"
+
+  git config --global user.email "thanhlongvu156@gmail.com"
+  git config --global user.name "have2b"
+
+  success "Git setup completed"
 }
 
 ########################################
@@ -226,7 +238,7 @@ install_paru() {
 # Main
 ########################################
 main() {
-  section "ARCH SYSTEM SETUP"
+  section "ARCH SYSTEM SETUP WITH HYPRLAND"
 
   check_root
   check_command pacman
@@ -242,6 +254,7 @@ main() {
   install_docker
   install_paru
   copy_config
+  setup_git
 
   success "System setup completed successfully"
 }
