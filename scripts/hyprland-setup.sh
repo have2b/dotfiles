@@ -121,7 +121,7 @@ setup_hyprland() {
     grim slurp cliphist wl-clipboard
 
   install_packages \
-    kitty quickshell firefox yazi
+    alacritty quickshell firefox yazi
 
   install_packages \
     hyprland hyprlock hyprpaper
@@ -173,7 +173,7 @@ copy_config() {
   rsync -av "$DOTFILES_REPO/zsh/.zshrc" "$ACTUAL_HOME/.zshrc"
 
   rsync -av "$DOTFILES_REPO/quickshell" "$ACTUAL_HOME/quickshell"
-  rsync -av "$DOTFILES_REPO/kitty/" "$CONFIG_DIR/kitty/"
+  rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
   rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"

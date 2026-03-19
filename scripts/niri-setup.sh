@@ -127,7 +127,7 @@ setup_niri() {
   systemctl enable upower.service
 
   install_packages \
-    niri
+    niri swaybg swaylock
 
   mkdir -p "$CONFIG_DIR/niri"
 
