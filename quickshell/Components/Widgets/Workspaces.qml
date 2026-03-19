@@ -59,7 +59,7 @@ Row {
                 radius: 7
                 color: active ? App.Constants.primary : (hovered ? Qt.rgba(1, 1, 1, 0.15) : App.Constants.light)
                 scale: active ? 1.1 : (hovered ? 1.05 : 1.0)
-                opacity: active ? 1.0 : (hovered ? 0.9 : 0.55)
+                opacity: active ? 1.0 : (hovered ? 0.9 : 1)
 
                 Behavior on width {
                     NumberAnimation {
