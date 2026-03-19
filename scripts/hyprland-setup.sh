@@ -143,8 +143,7 @@ setup_misc() {
   section "INSTALLING MISC TOOLS"
 
   install_packages \
-    fastfetch btop lazygit lazydocker \
-    which flatpak pavucontrol bitwarden-cli \
+    fastfetch btop lazygit lazydocker which flatpak pavucontrol bitwarden-cli \
     openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool
 
   success "Misc tools installed"
@@ -175,6 +174,7 @@ copy_config() {
 
   rsync -av "$DOTFILES_REPO/quickshell" "$ACTUAL_HOME/quickshell"
   rsync -av "$DOTFILES_REPO/kitty/" "$CONFIG_DIR/kitty/"
+  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
   rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
 
@@ -185,6 +185,30 @@ copy_config() {
   chsh -s "$(which zsh)" "$ACTUAL_USER"
 
   success "Configuration files installed"
+}
+
+########################################
+# Setup tmux
+########################################
+setup_tmux() {
+  section "SETTING UP TMUX"
+
+  install_packages tmux git
+
+  local tpm_dir="$ACTUAL_HOME/.tmux/plugins/tpm"
+
+  if [[ -d "$tpm_dir" ]]; then
+    log "TPM already installed"
+  else
+    log "Installing TPM (Tmux Plugin Manager)"
+    sudo -u "$ACTUAL_USER" git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+  fi
+
+  mkdir -p "$CONFIG_DIR/tmux"
+  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
+  chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$CONFIG_DIR/tmux" "$tpm_dir"
+
+  success "tmux setup complete"
 }
 
 ########################################
@@ -255,6 +279,7 @@ main() {
   setup_sddm
   setup_hyprland
   setup_misc
+  setup_tmux
   install_docker
   install_paru
   copy_config
