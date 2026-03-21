@@ -4,87 +4,105 @@ import "../../" as App
 
 Rectangle {
     id: root
-    height: 20
-    color: "transparent"
-    implicitWidth: btRow.implicitWidth + 8
+    height:        26
+    radius:        12
+    implicitWidth: btRow.implicitWidth + 20
 
-    // State is provided by the BluetoothService singleton
-    property bool powered: App.BluetoothService.powered
-    property int connectedCount: App.BluetoothService.connectedCount
-    property bool hasConnected: App.BluetoothService.hasConnected
+    property bool powered:        App.BluetoothService.powered
+    property int  connectedCount: App.BluetoothService.connectedCount
+    property bool hasConnected:   App.BluetoothService.hasConnected
+
+    readonly property var firstConnectedDevice: {
+        const devs = App.BluetoothService.devices
+        for (let i = 0; i < devs.length; i++) {
+            if (devs[i].connected) return devs[i]
+        }
+        return null
+    }
 
     property string btIcon: {
-        if (!powered) return "\udb80\udcb2"       // 󰂲 nf-md-bluetooth_off
-        if (hasConnected) return "\udb80\udcb1"   // 󰂱 nf-md-bluetooth_connect
-        return "\udb80\udcaf"                      // 󰂯 nf-md-bluetooth
+        if (!powered)     return "\udb80\udcb2"    // 󰂲 bluetooth_off
+        if (hasConnected) return "\udb80\udcb1"    // 󰂱 bluetooth_connect
+        return "\udb80\udcaf"                       // 󰂯 bluetooth
     }
 
-    // Hover highlight
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: -4
-        radius: 6
-        color: clickArea.containsMouse
-            ? (App.BluetoothService.panelVisible
-                ? Qt.rgba(147/255, 197/255, 253/255, 0.15)
-                : Qt.rgba(1, 1, 1, 0.06))
-            : "transparent"
-        Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
-    }
+    // #c6a0f6 (mauve) when connected; surface0 (#363a4f) when not
+    color: hasConnected ? App.Constants.accent : App.Constants.surface
+
+    border.width: 1
+    border.color: hasConnected
+        ? Qt.rgba(198 / 255, 160 / 255, 246 / 255, 0.30)
+        : Qt.rgba(202 / 255, 211 / 255, 245 / 255, 0.08)
+
+    Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
 
     Row {
         id: btRow
         anchors.centerIn: parent
-        spacing: 4
+        spacing: 5
 
         Text {
-            text: root.btIcon
-            color: App.BluetoothService.panelVisible
-                ? App.Constants.accent
-                : root.hasConnected ? App.Constants.accent
-                : root.powered ? App.Constants.light
-                : App.Constants.textDim
+            text:           root.btIcon
+            // Dark crust text on mauve; light text when idle
+            color:          root.hasConnected ? App.Constants.mantle : App.Constants.textDim
             font.pixelSize: App.Constants.iconSize
-            font.family: App.Constants.fontFamily
+            font.family:    App.Constants.fontFamily
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: App.Constants.animationNormal }
-            }
         }
 
-        // Connected device count badge
-        Rectangle {
-            width: 14
-            height: 14
-            radius: 7
-            color: App.BluetoothService.panelVisible
-                ? App.Constants.primary
-                : App.Constants.accent
-            visible: root.hasConnected
+        Text {
+            id:      deviceNameLabel
+            visible: root.firstConnectedDevice !== null
+            text:    root.firstConnectedDevice ? root.firstConnectedDevice.name : ""
+            color:   root.hasConnected ? App.Constants.mantle : App.Constants.light
+            font.pixelSize: 10
+            font.family:    App.Constants.fontFamily
+            width:  Math.min(implicitWidth, 80)
+            elide:  Text.ElideRight
             anchors.verticalCenter: parent.verticalCenter
+        }
 
-            Behavior on color { ColorAnimation { duration: App.Constants.animationNormal } }
+        // ✕ disconnect button
+        Rectangle {
+            id:      disconnectBtn
+            visible: root.firstConnectedDevice !== null
+            width: 14; height: 14; radius: 7
+            color: disconnectArea.containsMouse
+                ? Qt.rgba(237 / 255, 135 / 255, 150 / 255, 0.50)
+                : Qt.rgba(24  / 255,  25 / 255,  38 / 255, 0.40)
+            anchors.verticalCenter: parent.verticalCenter
+            Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
 
             Text {
                 anchors.centerIn: parent
-                text: root.connectedCount
-                color: App.Constants.background
-                font.pixelSize: 8
-                font.bold: true
-                font.family: App.Constants.fontFamily
+                text:  "✕"
+                color: disconnectArea.containsMouse ? App.Constants.error : App.Constants.mantle
+                font.pixelSize: 7
+                font.bold:      true
+                font.family:    App.Constants.fontFamily
+                Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
+            }
+
+            MouseArea {
+                id:           disconnectArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape:  Qt.PointingHandCursor
+                onClicked: mouse => {
+                    mouse.accepted = true
+                    if (root.firstConnectedDevice)
+                        App.BluetoothService.disconnectDevice(root.firstConnectedDevice.mac)
+                }
             }
         }
     }
 
     MouseArea {
-        id: clickArea
         anchors.fill: parent
-        anchors.margins: -4
+        z: -1
         hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        cursorShape:  Qt.PointingHandCursor
         onClicked: {
-            // Close the other panel before toggling this one
             App.NetworkService.closePanel()
             App.NotificationService.closePanel()
             App.BluetoothService.togglePanel()

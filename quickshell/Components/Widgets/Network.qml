@@ -4,83 +4,67 @@ import "../../" as App
 
 Rectangle {
     id: root
-    height: 20
-    color: "transparent"
+    height:        26
+    radius:        12
     implicitWidth: netRow.implicitWidth + 20
 
-    // State is provided by the NetworkService singleton
     property string connectionType: App.NetworkService.connectionType
-    property string ssid: App.NetworkService.ssid
-    property int signalStrength: App.NetworkService.signalStrength
-    property bool connected: App.NetworkService.connected
+    property string ssid:           App.NetworkService.ssid
+    property int    signalStrength: App.NetworkService.signalStrength
+    property bool   connected:      App.NetworkService.connected
 
     property string networkIcon: {
-        if (connectionType === "ethernet") return ""   // 󰈀 nf-md-ethernet
+        if (connectionType === "ethernet") return ""    // nf-md-ethernet
         if (connectionType === "wifi") {
-            if (signalStrength > 75) return "󰤨"        // nf-md-wifi_strength_4
-            if (signalStrength > 50) return "󰤥"        // nf-md-wifi_strength_3
-            if (signalStrength > 25) return "󰤢"        // nf-md-wifi_strength_2
-            return "󰤟"                                  // nf-md-wifi_strength_1
+            if (signalStrength > 75) return "󰤨"         // strength_4
+            if (signalStrength > 50) return "󰤥"         // strength_3
+            if (signalStrength > 25) return "󰤢"         // strength_2
+            return "󰤟"                                   // strength_1
         }
-        return "󰤮"                                      // nf-md-wifi_off
+        return "󰤮"                                       // wifi_off
     }
 
-    // Hover highlight
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: -4
-        radius: 6
-        color: clickArea.containsMouse
-            ? (App.NetworkService.panelVisible
-                ? Qt.rgba(59/255, 130/255, 246/255, 0.15)
-                : Qt.rgba(1, 1, 1, 0.06))
-            : "transparent"
-        Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
-    }
+    // #8aadf4 (blue) when connected; surface0 (#363a4f) when not
+    color: connected ? App.Constants.primary : App.Constants.surface
+
+    border.width: 1
+    border.color: connected
+        ? Qt.rgba(138 / 255, 173 / 255, 244 / 255, 0.25)
+        : Qt.rgba(202 / 255, 211 / 255, 245 / 255, 0.08)
+
+    Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
 
     Row {
         id: netRow
         anchors.centerIn: parent
-        spacing: 4
+        spacing: 5
 
         Text {
-            text: root.networkIcon
-            color: App.NetworkService.panelVisible
-                ? App.Constants.primary
-                : root.connected ? App.Constants.light : App.Constants.textDim
+            text:           root.networkIcon
+            color:          root.connected ? App.Constants.mantle : App.Constants.textDim
             font.pixelSize: App.Constants.iconSize
-            font.family: App.Constants.fontFamily
+            font.family:    App.Constants.fontFamily
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: App.Constants.animationNormal }
-            }
+            Behavior on color { ColorAnimation { duration: App.Constants.animationNormal } }
         }
 
         Text {
-            text: root.ssid
+            text:    root.ssid
             visible: root.connected && text !== ""
-            color: App.NetworkService.panelVisible
-                ? App.Constants.primary
-                : App.Constants.textDim
+            color:   root.connected ? App.Constants.mantle : App.Constants.light
             font.pixelSize: 10
-            font.family: App.Constants.fontFamily
+            font.family:    App.Constants.fontFamily
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: App.Constants.animationNormal }
-            }
+            width: Math.min(implicitWidth, 90)
+            elide: Text.ElideRight
         }
     }
 
     MouseArea {
-        id: clickArea
         anchors.fill: parent
-        anchors.margins: -4
         hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        cursorShape:  Qt.PointingHandCursor
         onClicked: {
-            // Close the other panel before toggling this one
             App.BluetoothService.closePanel()
             App.NotificationService.closePanel()
             App.NetworkService.togglePanel()

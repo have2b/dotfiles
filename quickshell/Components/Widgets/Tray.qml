@@ -12,8 +12,14 @@ Item {
 
     property var barWindow
 
-    // Collapse to zero width when no tray items are registered
-    readonly property bool hasTrayItems: SystemTray.items.values.length > 0
+    // Collapse to zero width when no visible (non-fcitx) tray items are registered
+    readonly property bool hasTrayItems: {
+        const vals = SystemTray.items.values
+        for (let i = 0; i < vals.length; i++) {
+            if (!(vals[i].id ?? "").toLowerCase().includes("fcitx")) return true
+        }
+        return false
+    }
 
     implicitWidth: trayRow.implicitWidth
     implicitHeight: App.Constants.barHeight
@@ -32,9 +38,13 @@ Item {
 
                 readonly property var item: trayIcon.modelData
 
+                // Hide fcitx5 — it has its own dedicated Keyboard.qml widget in the bar
+                readonly property bool isFcitx: (item.id ?? "").toLowerCase().includes("fcitx")
+
                 Layout.alignment: Qt.AlignVCenter
-                implicitWidth: 16
-                implicitHeight: 16
+                implicitWidth:  isFcitx ? 0 : 16
+                implicitHeight: isFcitx ? 0 : 16
+                visible: !isFcitx
 
                 // ── Hover background ─────────────────────────────────────────
                 Rectangle {

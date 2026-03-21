@@ -4,9 +4,10 @@ import "../../" as App
 
 Rectangle {
     id: root
-    height: 20
-    color: "transparent"
+
     implicitWidth: clockCol.implicitWidth
+    height:        28
+    color:         "transparent"
 
     SystemClock {
         id: clock
@@ -16,27 +17,25 @@ Rectangle {
     Column {
         id: clockCol
         anchors.centerIn: parent
-        spacing: 0
+        spacing: 1
 
-        // Time — prominent
+        // Time — hh:mm:ss AP
         Text {
-            id: timePart
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Qt.formatDateTime(clock.date, "hh:mm AP")
-            color: App.Constants.light
+            text:           Qt.formatDateTime(clock.date, "hh:mm:ss AP")
+            color:          App.Constants.light
             font.pixelSize: 13
-            font.weight: Font.Medium
-            font.family: App.Constants.fontFamily
+            font.weight:    Font.Medium
+            font.family:    App.Constants.fontFamily
         }
 
-        // Date — subtle, below the time
+        // Date — "Wednesday, March 04"  (≈ 0.7 × time size)
         Text {
-            id: datePart
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Qt.formatDateTime(clock.date, "ddd d MMM")
-            color: App.Constants.textDim
+            text:           Qt.formatDateTime(clock.date, "dddd, MMMM dd")
+            color:          App.Constants.textDim
             font.pixelSize: 9
-            font.family: App.Constants.fontFamily
+            font.family:    App.Constants.fontFamily
         }
     }
 }

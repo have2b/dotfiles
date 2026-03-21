@@ -31,6 +31,7 @@ QtObject {
     // ── Available networks ────────────────────────────────────────────────
     // Each entry: { ssid: string, signal: int, security: string, inUse: bool }
     property var networks: []
+    property var savedSsids: []   // SSIDs with saved NetworkManager credentials
     property bool scanning: false
     property bool connecting: false
     property string statusMessage: ""
@@ -175,6 +176,37 @@ QtObject {
         if (root.scanning) return
         root.scanning = true
         scanProc.running = true
+        savedProc.running = true   // refresh saved-credential list in parallel
+    }
+
+    // ── Saved / known WiFi connections ────────────────────────────────────
+    // Runs `nmcli -t -f NAME,TYPE connection show` to populate savedSsids.
+    property var _savedProc: Process {
+        id: savedProc
+        command: ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"]
+        running: false
+        property string output: ""
+        stdout: SplitParser {
+            onRead: data => savedProc.output += data + "\n"
+        }
+        onExited: {
+            const lines = savedProc.output.trim().split("\n")
+            savedProc.output = ""
+            let ssids = []
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim()
+                if (!line) continue
+                const lastColon = line.lastIndexOf(":")
+                if (lastColon < 0) continue
+                const type = line.substring(lastColon + 1).trim()
+                // Profile name may contain escaped colons (\:) from nmcli terse mode
+                const name = line.substring(0, lastColon).replace(/\\:/g, ":")
+                if (type === "802-11-wireless") {
+                    ssids.push(name)
+                }
+            }
+            root.savedSsids = ssids
+        }
     }
 
     // ── Connect / Disconnect ──────────────────────────────────────────────
@@ -202,11 +234,16 @@ QtObject {
         onTriggered: root.statusMessage = ""
     }
 
-    function connectNetwork(ssid) {
+    function connectNetwork(ssid, password) {
         if (root.connecting) return
         root.connecting = true
         root.statusMessage = "Connecting to " + ssid + "..."
-        actionProc.command = ["nmcli", "device", "wifi", "connect", ssid]
+        var cmd = ["nmcli", "device", "wifi", "connect", ssid]
+        if (password && password.length > 0) {
+            cmd.push("password")
+            cmd.push(password)
+        }
+        actionProc.command = cmd
         actionProc.running = true
     }
 

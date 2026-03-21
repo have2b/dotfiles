@@ -4,71 +4,51 @@ import "../../" as App
 
 Rectangle {
     id: root
-    height: 20
-    color: "transparent"
-    implicitWidth: volRow.implicitWidth + 8
+    height:        26
+    radius:        12
+    implicitWidth: volRow.implicitWidth + 20
+    color:         App.Constants.surface
+    border.width:  1
+    border.color:  Qt.rgba(202 / 255, 211 / 255, 245 / 255, 0.08)
 
     property real volume: App.AudioService.volume
-    property bool muted: App.AudioService.muted
+    property bool muted:  App.AudioService.muted
 
     property string volumeIcon: {
-        if (muted || volume <= 0) return "󰝟"   // nf-md-volume_off
-        if (volume < 33)          return "󰕿"   // nf-md-volume_low
-        if (volume < 66)          return "󰖀"   // nf-md-volume_medium
-        return "󰕾"                              // nf-md-volume_high
-    }
-
-    property color iconColor: {
-        if (muted || volume <= 0) return App.Constants.textDim
-        if (volume < 33)          return App.Constants.secondary
-        return App.Constants.light
-    }
-
-    // Hover background
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: -4
-        radius: 6
-        color: clickArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent"
-        Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
+        if (muted || volume <= 0) return "󰝟"   // volume_off
+        if (volume < 33)          return "󰕿"   // volume_low
+        if (volume < 66)          return "󰖀"   // volume_medium
+        return "󰕾"                              // volume_high
     }
 
     Row {
         id: volRow
         anchors.centerIn: parent
-        spacing: 4
+        spacing: 5
 
         Text {
-            text: root.volumeIcon
-            color: root.iconColor
+            text:           root.volumeIcon
+            color:          root.muted ? App.Constants.overlay : App.Constants.textDim
             font.pixelSize: App.Constants.iconSize
-            font.family: App.Constants.fontFamily
+            font.family:    App.Constants.fontFamily
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: App.Constants.animationNormal }
-            }
+            Behavior on color { ColorAnimation { duration: App.Constants.animationNormal } }
         }
 
         Text {
-            text: root.muted ? "Muted" : Math.round(root.volume) + "%"
-            color: root.muted ? App.Constants.textDim : App.Constants.light
+            text:           root.muted ? "Muted" : Math.round(root.volume) + "%"
+            color:          root.muted ? App.Constants.overlay : App.Constants.light
             font.pixelSize: 10
-            font.family: App.Constants.fontFamily
+            font.family:    App.Constants.fontFamily
             anchors.verticalCenter: parent.verticalCenter
-
-            Behavior on color {
-                ColorAnimation { duration: App.Constants.animationNormal }
-            }
+            Behavior on color { ColorAnimation { duration: App.Constants.animationNormal } }
         }
     }
 
     MouseArea {
-        id: clickArea
-        anchors.fill: parent
-        anchors.margins: -4
-        hoverEnabled: true
-        cursorShape: Qt.PointingHandCursor
+        anchors.fill:    parent
+        hoverEnabled:    true
+        cursorShape:     Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton
 
         onClicked: App.AudioService.toggleMute()

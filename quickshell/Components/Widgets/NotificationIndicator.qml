@@ -5,32 +5,25 @@ import "../../" as App
 // Minimal notification indicator:
 //   - Bell icon always shown
 //   - When unread: bell turns accent color + a small colored dot appears below
-//   - No large counter badge cluttering the bar
+//   - Background / hover styling is handled by the pill wrapper in Bar.qml
 Item {
     id: root
-    implicitWidth: 22
+    implicitWidth: 20
     implicitHeight: 20
 
     property int notifCount: App.NotificationService.unreadCount
     readonly property bool hasUnread: notifCount > 0
 
-    // Hover background
-    Rectangle {
-        anchors.centerIn: parent
-        width: 22
-        height: 22
-        radius: 5
-        color: notifMouse.containsMouse ? App.Constants.surfaceHover : "transparent"
-        Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
-    }
+    // Expose hover state so the parent pill can react to it
+    readonly property bool hovered: notifMouse.containsMouse
 
     // Bell icon
     Text {
         id: bellIcon
         anchors.centerIn: parent
         anchors.verticalCenterOffset: root.hasUnread ? -2 : 0
-        text: root.hasUnread ? "\udb80\ude5c" : "\udb80\ude5a"  // 󰅜 / 󰅚
-        color: root.hasUnread ? App.Constants.accent : App.Constants.light
+        text:  root.hasUnread ? "\udb80\ude5c" : "\udb80\ude5a"   // 󰅜 / 󰅚
+        color: root.hasUnread ? App.Constants.accent : App.Constants.textDim
         font.pixelSize: App.Constants.iconSize
         font.family: App.Constants.fontFamily
 

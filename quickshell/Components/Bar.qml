@@ -7,259 +7,174 @@ import "../" as App
 PanelWindow {
     id: bar
     anchors {
-        top: true
-        left: true
+        top:   true
+        left:  true
         right: true
     }
-    // Reserve exactly the original bar height — curved corners bleed below
+
+    // Reserve bar height + top margin so the compositor pushes windows down correctly
     implicitHeight: App.Constants.barHeight
-    // Transparent so rounded corners show through to wallpaper
+
+    // Transparent — the pill Rectangle provides the visible background
     color: "transparent"
 
-    readonly property int barRadius: 12
-
-    // ── Drop shadow behind bar body ────────────────────────────────────────
+    // ── Floating Pill ─────────────────────────────────────────────────────────
     Rectangle {
+        id: barPill
+
         anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-            topMargin: 6
-            leftMargin: 8
-            rightMargin: 8
+            top:         parent.top
+            left:        parent.left
+            right:       parent.right
         }
-        height: App.Constants.barHeight
-        topLeftRadius: 0
-        topRightRadius: 0
-        bottomLeftRadius: bar.barRadius + 3
-        bottomRightRadius: bar.barRadius + 3
-        color: Qt.rgba(0, 0, 0, 0.50)
-        layer.enabled: true
-        z: 0
-    }
 
-    // ── Bar body with curved bottom corners ────────────────────────────────
-    Rectangle {
-        id: barBody
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-        }
-        // Extend below the window so top corners are sharp,
-        // and the bottom arc overflows into compositor (shows wallpaper)
-        height: App.Constants.barHeight + bar.barRadius
+        height: App.Constants.barHeight   // 42 px
+        radius: height / 2
 
-        topLeftRadius: 0
-        topRightRadius: 0
-        bottomLeftRadius: bar.barRadius
-        bottomRightRadius: bar.barRadius
+        // No bar-level background — each component pill provides its own surface
+        color: "transparent"
+        border.width: 0
 
-        color: App.Constants.background
-        z: 1
-
-        // Curved border — left + bottom arc + right, no top line
-        Rectangle {
-            anchors.fill: parent
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: bar.barRadius
-            bottomRightRadius: bar.barRadius
-            color: "transparent"
-            border.width: 1
-            border.color: App.Constants.barBorder
-
-            // Mask the top border segment
-            Rectangle {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: 2
-                color: App.Constants.background
-            }
-        }
-    }
-
-    // ── All content — constrained to original barHeight ───────────────────
-    Item {
-        anchors {
-            top: parent.top
-            left: parent.left
-            right: parent.right
-        }
-        height: App.Constants.barHeight
-        z: 2
-
+        // ── Left + Right via RowLayout ────────────────────────────────────────
         RowLayout {
+            id: outerRow
             anchors {
-                fill: parent
-                leftMargin: 8
-                rightMargin: 8
-                topMargin: 4
-                bottomMargin: 4
+                fill:          parent
+                leftMargin:    12
+                rightMargin:   12
             }
             spacing: 0
 
-            // ── LEFT ─────────────────────────────────────────────────────────
+            // ── LEFT — every component wrapped in its own surface pill ────────
             RowLayout {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                spacing: 6
+                spacing: 5
 
+                // ── Search pill ───────────────────────────────────────────────
                 Rectangle {
-                    width: App.Constants.normalWidth
-                    height: App.Constants.normalWidth
-                    color: "transparent"
+                    height: 28; width: 28
+                    radius: 8
+                    color: searchArea.containsMouse ? App.Constants.surface1 : App.Constants.surface
+                    border.width: 1
+                    border.color: App.Constants.barBorder
+                    Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
+
                     Text {
                         anchors.centerIn: parent
-                        text: "󰣇"
-                        color: App.Constants.primary
-                        font.pixelSize: 14
-                        font.family: App.Constants.fontFamily
+                        text:           "󰣇"   
+                        color:          searchArea.containsMouse
+                                            ? App.Constants.primary
+                                            : App.Constants.sky
+                        font.pixelSize: 12
+                        font.family:    App.Constants.fontFamily
+                        Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
+                    }
+                    MouseArea {
+                        id: searchArea; anchors.fill: parent; hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked:   App.AppLauncherService.toggle()
                     }
                 }
 
-                Rectangle { width: 1; height: 14; color: App.Constants.secondary; opacity: 0.35 }
+                // ── Workspaces pill ───────────────────────────────────────────
+                Rectangle {
+                    height: 28
+                    implicitWidth: wsWidget.implicitWidth + 6
+                    radius: 8
+                    color: App.Constants.surface
+                    border.width: 1
+                    border.color: App.Constants.barBorder
 
-                Workspaces {
-                    Layout.alignment: Qt.AlignVCenter
+                    Workspaces {
+                        id: wsWidget
+                        anchors.centerIn: parent
+                    }
                 }
 
-                Rectangle { width: 1; height: 14; color: App.Constants.secondary; opacity: 0.35 }
+                // ── Active Window pill ────────────────────────────────────────
+                Rectangle {
+                    height: 28
+                    implicitWidth: awWidget.implicitWidth + 10
+                    radius: 8
+                    color: App.Constants.surface
+                    border.width: 1
+                    border.color: App.Constants.barBorder
+                    clip: true
 
-                ActiveWindow {
-                    Layout.alignment: Qt.AlignVCenter
+                    ActiveWindow {
+                        id: awWidget
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.left:           parent.left
+                        anchors.leftMargin:     5
+                    }
                 }
             }
 
+            // Elastic spacers — push LEFT and RIGHT to their edges;
+            // the CENTER is absolutely positioned inside barPill below.
+            Item { Layout.fillWidth: true }
             Item { Layout.fillWidth: true }
 
-            // ── CENTER spacer ─────────────────────────────────────────────────
-            Item { Layout.fillWidth: true }
-
-            // ── RIGHT — grouped pill containers ──────────────────────────────
+            // ── RIGHT ─────────────────────────────────────────────────────────
             RowLayout {
                 Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                spacing: 4
+                spacing: 8
 
-                // ── Network + Bluetooth pill ──────────────────────────────────
-                Rectangle {
-                    implicitHeight: 24
-                    implicitWidth: netBtRow.implicitWidth + 16
-                    radius: 6
-                    color: App.Constants.surfaceMuted
-                    border.width: 1
-                    border.color: App.Constants.cardBorder
-
-                    Row {
-                        id: netBtRow
-                        anchors.centerIn: parent
-                        spacing: 6
-
-                        Network { anchors.verticalCenter: parent.verticalCenter }
-
-                        Rectangle {
-                            width: 1; height: 12
-                            color: App.Constants.secondary; opacity: 0.3
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-
-                        Bluetooth { anchors.verticalCenter: parent.verticalCenter }
-                    }
+                Tray {
+                    id:           trayWidget
+                    barWindow:    bar
+                    Layout.alignment: Qt.AlignVCenter
                 }
 
-                // ── Battery + Volume pill ─────────────────────────────────────
+                Keyboard  { Layout.alignment: Qt.AlignVCenter }
+                Network   { Layout.alignment: Qt.AlignVCenter }
+                Bluetooth { Layout.alignment: Qt.AlignVCenter }
+                Volume    { Layout.alignment: Qt.AlignVCenter }
+                Battery   { Layout.alignment: Qt.AlignVCenter }
+
+                // ── Notification pill ─────────────────────────────────────────
                 Rectangle {
-                    implicitHeight: 24
-                    implicitWidth: batVolRow.implicitWidth + 16
-                    radius: 6
-                    color: App.Constants.surfaceMuted
+                    height: 28
+                    implicitWidth: notifWidget.implicitWidth + 12
+                    radius: 8
+                    color: notifWidget.hovered ? App.Constants.surface1 : App.Constants.surface
                     border.width: 1
-                    border.color: App.Constants.cardBorder
+                    border.color: App.Constants.barBorder
+                    Behavior on color { ColorAnimation { duration: App.Constants.animationFast } }
 
-                    Row {
-                        id: batVolRow
+                    NotificationIndicator {
+                        id: notifWidget
                         anchors.centerIn: parent
-                        spacing: 6
-
-                        Battery { anchors.verticalCenter: parent.verticalCenter }
-
-                        Rectangle {
-                            width: 1; height: 12
-                            color: App.Constants.secondary; opacity: 0.3
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-
-                        Volume { anchors.verticalCenter: parent.verticalCenter }
-                    }
-                }
-
-                // ── Tray + Notification pill (when tray has items) ────────────
-                Rectangle {
-                    implicitHeight: 24
-                    implicitWidth: trayNotifRow.implicitWidth + 10
-                    radius: 6
-                    color: App.Constants.surfaceMuted
-                    border.width: 1
-                    border.color: App.Constants.cardBorder
-                    visible: trayWidget.hasTrayItems
-
-                    Row {
-                        id: trayNotifRow
-                        anchors.centerIn: parent
-                        spacing: 6
-
-                        Tray {
-                            id: trayWidget
-                            anchors.verticalCenter: parent.verticalCenter
-                            barWindow: bar
-                        }
-
-                        Rectangle {
-                            width: 1; height: 12
-                            color: App.Constants.secondary; opacity: 0.3
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-
-                        NotificationIndicator {
-                            id: notifIndicator
-                            anchors.verticalCenter: parent.verticalCenter
-                        }
-                    }
-                }
-
-                // ── Notification-only pill (no tray items) ────────────────────
-                // Uses a Loader so only one NotificationIndicator is ever live.
-                Rectangle {
-                    id: notifOnlyPill
-                    implicitHeight: 24
-                    implicitWidth: (notifOnlyLoader.item ? notifOnlyLoader.item.implicitWidth : 0) + 10
-                    radius: 6
-                    color: App.Constants.surfaceMuted
-                    border.width: 1
-                    border.color: App.Constants.cardBorder
-                    visible: !trayWidget.hasTrayItems
-
-                    Loader {
-                        id: notifOnlyLoader
-                        anchors.centerIn: parent
-                        active: !trayWidget.hasTrayItems
-                        sourceComponent: NotificationIndicator {}
                     }
                 }
             }
         }
 
-        // ── CENTER CONTENT (absolute — prevents layout shift) ─────────────────
-        RowLayout {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 10
+        // ── CENTER — absolutely positioned so it never shifts with left/right content ──
+        Rectangle {
+            anchors.centerIn: parent
+            height:       40
+            implicitWidth: centerRow.implicitWidth + 24
+            radius:        8
+            color:         App.Constants.surface
+            border.width:  1
+            border.color:  App.Constants.barBorder
 
-            MediaPlayer { Layout.alignment: Qt.AlignVCenter }
+            RowLayout {
+                id: centerRow
+                anchors.centerIn: parent
+                spacing: 10
 
-            Rectangle { width: 1; height: 14; color: App.Constants.secondary; opacity: 0.35 }
+                MediaPlayer { Layout.alignment: Qt.AlignVCenter }
 
-            Clock { Layout.alignment: Qt.AlignVCenter }
+                Rectangle {
+                    width: 1; height: 16
+                    color: App.Constants.separator
+                    opacity: 0.6
+                }
+
+                Clock { Layout.alignment: Qt.AlignVCenter }
+            }
         }
     }
 }

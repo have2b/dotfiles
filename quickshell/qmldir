@@ -5,3 +5,4 @@ singleton NetworkService 1.0 Services/NetworkService.qml
 singleton BluetoothService 1.0 Services/BluetoothService.qml
 singleton AudioService 1.0 Services/AudioService.qml
 singleton AppLauncherService 1.0 Services/AppLauncherService.qml
+singleton KeyboardService 1.0 Services/KeyboardService.qml

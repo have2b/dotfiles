@@ -172,7 +172,7 @@ copy_config() {
 
   rsync -av "$DOTFILES_REPO/zsh/.zshrc" "$ACTUAL_HOME/.zshrc"
 
-  rsync -av "$DOTFILES_REPO/quickshell" "$ACTUAL_HOME/quickshell"
+  rsync -av "$DOTFILES_REPO/quickshell" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"

@@ -22,8 +22,8 @@ Item {
         implicitWidth: nothingRow.implicitWidth + 16
         height: 22
         radius: 11
-        color: Qt.rgba(1, 1, 1, 0.04)
-        border.color: Qt.rgba(1, 1, 1, 0.06)
+        color: Qt.rgba(54 / 255, 58 / 255, 79 / 255, 0.60)   // surface0 @ 60 %
+        border.color: Qt.rgba(202 / 255, 211 / 255, 245 / 255, 0.06)
         border.width: 1
 
         Row {
@@ -56,8 +56,10 @@ Item {
         implicitWidth: playerLayout.implicitWidth + 16
         height: 22
         radius: 11
-        color: pillHover.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.05)
-        border.color: Qt.rgba(1, 1, 1, 0.07)
+        color: pillHover.containsMouse
+            ? Qt.rgba(73 / 255, 77 / 255, 100 / 255, 0.90)   // surface1 hover
+            : Qt.rgba(54 / 255, 58 / 255,  79 / 255, 0.70)   // surface0 idle
+        border.color: Qt.rgba(202 / 255, 211 / 255, 245 / 255, 0.07)
         border.width: 1
 
         Behavior on color { ColorAnimation { duration: 150 } }
@@ -231,7 +233,7 @@ Item {
                     width: 16
                     height: 16
                     radius: 8
-                    color: prevArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                    color: prevArea.containsMouse ? App.Constants.surfaceHover : "transparent"
                     visible: App.MediaService.canPrevious
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -256,7 +258,7 @@ Item {
                     width: 18
                     height: 18
                     radius: 9
-                    color: playArea.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.06)
+                    color: playArea.containsMouse ? App.Constants.surface1 : App.Constants.surfaceMuted
                     anchors.verticalCenter: parent.verticalCenter
 
                     Text {
@@ -280,7 +282,7 @@ Item {
                     width: 16
                     height: 16
                     radius: 8
-                    color: nextArea.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : "transparent"
+                    color: nextArea.containsMouse ? App.Constants.surfaceHover : "transparent"
                     visible: App.MediaService.canNext
                     anchors.verticalCenter: parent.verticalCenter
 
