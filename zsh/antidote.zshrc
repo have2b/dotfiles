@@ -16,6 +16,11 @@ source "${ANTIDOTE_HOME}/antidote.zsh"
 fpath=("${ANTIDOTE_HOME}/functions" $fpath)
 autoload -Uz antidote
 
+# =========================
+# Completion system
+# =========================
+autoload -Uz compinit && compinit
+
 if [[ ! ${zsh_plugins}.zsh -nt ${zsh_plugins}.txt ]]; then
   antidote bundle <${zsh_plugins}.txt >|${zsh_plugins}.zsh
 fi
@@ -27,11 +32,6 @@ source ${zsh_plugins}.zsh
 # Starship (manual)
 # =========================
 eval "$(starship init zsh)"
-
-# =========================
-# Completion system
-# =========================
-autoload -Uz compinit && compinit
 
 # =========================
 # Keybindings
