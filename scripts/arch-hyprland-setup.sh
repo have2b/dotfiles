@@ -184,9 +184,10 @@ copy_config() {
 
   rsync -av "$DOTFILES_REPO/quickshell" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
-  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
-  rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
-  rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
+  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
 
   chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
@@ -342,3 +343,4 @@ main() {
 }
 
 main
+
