@@ -210,17 +210,12 @@ setup_zsh() {
 
   # Install Antidote if missing
   if [[ ! -d "$ANTIDOTE_HOME/.git" ]]; then
-    sudo -u "$ACTUAL_USER" git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
+    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
   fi
 
   # Sync configs as actual user (avoids root-owned files)
-  sudo -u "$ACTUAL_USER" rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
-  sudo -u "$ACTUAL_USER" rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
-
-  # Build plugin bundle as actual user
-  sudo -u "$ACTUAL_USER" bash -c "
-    \"$ANTIDOTE_HOME/antidote.zsh\" bundle < \"$ZSH_PLUGIN_FILE\" > \"$ZSH_BUNDLE_FILE\"
-  "
+  rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
+  rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
 
   # Change shell safely
   ZSH_PATH="$(command -v zsh)"
@@ -308,6 +303,15 @@ install_paru() {
   success "paru installed"
 }
 
+install_fonts() {
+  section "INSTALLING FONTS"
+
+  install_packages ttf-jetbrains-mono-nerd ttf-jetbrains-mono \
+    noto-fonts noto-fonts-cjk noto-fonts-emoji
+
+  success "Fonts installed"
+}
+
 ########################################
 # Main
 ########################################
@@ -331,7 +335,7 @@ main() {
   install_paru
   copy_config
   setup_git
-
+  install_fonts
   section "SETUP COMPLETE"
   success "System setup completed successfully"
   warn "Log out and back in for group changes (docker) and shell change (zsh) to take effect."
