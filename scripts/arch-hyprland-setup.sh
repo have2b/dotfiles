@@ -185,6 +185,7 @@ copy_config() {
   rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/waybar" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
