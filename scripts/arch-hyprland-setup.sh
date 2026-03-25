@@ -143,8 +143,8 @@ setup_misc() {
   section "INSTALLING MISC TOOLS"
 
   install_packages \
-    fastfetch btop lazygit lazydocker which flatpak pavucontrol bitwarden-cli \
-    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool
+    fastfetch btop lazygit lazydocker which flatpak pavucontrol \
+    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool starship
 
   success "Misc tools installed"
 }
@@ -182,9 +182,43 @@ copy_config() {
 
   chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$ACTUAL_HOME/.zshrc" "$CONFIG_DIR"
 
-  chsh -s "$(which zsh)" "$ACTUAL_USER"
-
   success "Configuration files installed"
+}
+
+########################################
+# Copy configuration
+########################################
+setup_zsh() {
+  section "SETTING UP ZSH"
+
+  ANTIDOTE_HOME="${ACTUAL_HOME}/.local/share/antidote"
+  ZSH_PLUGIN_FILE="${ANTIDOTE_HOME}/.zsh_plugins.txt"
+  ZSH_BUNDLE_FILE="${ANTIDOTE_HOME}/.zsh_plugins.zsh"
+
+  # Ensure directory exists
+  mkdir -p "$ANTIDOTE_HOME"
+
+  # Install Antidote if missing
+  if [ ! -d "$ANTIDOTE_HOME/.git" ]; then
+    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
+  fi
+
+  # Sync configs
+  rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
+  rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
+
+  # Build plugin bundle (IMPORTANT)
+  "$ANTIDOTE_HOME/antidote.zsh" bundle < "$ZSH_PLUGIN_FILE" > "$ZSH_BUNDLE_FILE"
+
+  # Change shell safely
+  ZSH_PATH="$(command -v zsh)"
+  if grep -q "$ZSH_PATH" /etc/shells; then
+    chsh -s "$ZSH_PATH" "$ACTUAL_USER"
+  else
+    echo "$ZSH_PATH not in /etc/shells, skipping chsh"
+  fi
+
+  success "Zsh setup complete"
 }
 
 ########################################
@@ -278,6 +312,7 @@ main() {
 
   setup_sddm
   setup_hyprland
+  setup_zsh
   setup_misc
   setup_tmux
   install_docker

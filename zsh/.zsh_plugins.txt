@@ -1,0 +1,11 @@
+# Core plugins
+zsh-users/zsh-syntax-highlighting
+zsh-users/zsh-completions
+zsh-users/zsh-autosuggestions
+Aloxaf/fzf-tab
+MichaelAquilina/zsh-you-should-use
+
+# OMZ plugins (equivalent to your snippets)
+ohmyzsh/ohmyzsh path:plugins/sudo
+ohmyzsh/ohmyzsh path:plugins/command-not-found
+ohmyzsh/ohmyzsh path:plugins/git
