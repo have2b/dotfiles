@@ -130,7 +130,7 @@ setup_hyprland() {
 
   # Install all Hyprland-related packages in one pass
   install_packages \
-    unzip zip tar starship rofi mako \
+    unzip zip tar starship rofi mako waybar \
     zoxide eza zsh jq fzf \
     grim slurp cliphist wl-clipboard \
     alacritty quickshell firefox yazi \
@@ -183,12 +183,12 @@ copy_config() {
   mkdir -p "$CONFIG_DIR"
 
   rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
-  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/tmux" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/waybar" "$CONFIG_DIR"
-  rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR"
-  rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR"
-  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
+  rsync -av "$DOTFILES_REPO/fastfetch" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/nvim" "$CONFIG_DIR/nvim"
+  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR"
 
   chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
 
