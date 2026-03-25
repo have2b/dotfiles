@@ -187,7 +187,7 @@ copy_config() {
   rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/waybar" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/fastfetch" "$CONFIG_DIR"
-  rsync -av "$DOTFILES_REPO/nvim" "$CONFIG_DIR/nvim"
+  rsync -av "$DOTFILES_REPO/nvim" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR"
 
   chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
@@ -305,6 +305,19 @@ install_paru() {
   success "paru installed"
 }
 
+#########################################
+# Install mise (CLI tool installer)
+#########################################
+install_mise() {
+  section "INSTALLING MISE"
+
+  curl https://mise.run | sh
+
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ACTUAL_HOME/.local"
+
+  success "mise installed"
+}
+
 install_fonts() {
   section "INSTALLING FONTS"
 
@@ -321,8 +334,6 @@ main() {
   section "ARCH SYSTEM SETUP WITH HYPRLAND"
 
   check_root
-  check_command pacman
-  check_command systemctl
 
   if [[ ! -d "$DOTFILES_REPO" ]]; then
     error "Dotfiles repo not found at $DOTFILES_REPO"
@@ -335,6 +346,7 @@ main() {
   setup_tmux
   install_docker
   install_paru
+  install_mise
   copy_config
   setup_git
   install_fonts
