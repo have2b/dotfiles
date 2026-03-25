@@ -317,8 +317,6 @@ main() {
   check_root
   check_command pacman
   check_command systemctl
-  check_command rsync
-  check_command git
 
   if [[ ! -d "$DOTFILES_REPO" ]]; then
     error "Dotfiles repo not found at $DOTFILES_REPO"
