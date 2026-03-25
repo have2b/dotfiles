@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 
 # Configurable variables
 FONT_NAME="JetBrainsMono"
-FONT_VERSION="v3.3.0"
+FONT_VERSION="v3.4.0"
 FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/${FONT_VERSION}/JetBrainsMono.zip"
 FONT_DIR="${HOME}/.local/share/fonts/NerdFonts"
 

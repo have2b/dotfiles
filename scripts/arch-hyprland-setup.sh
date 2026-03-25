@@ -116,7 +116,7 @@ setup_hyprland() {
   section "SETTING UP HYPRLAND"
 
   install_packages \
-    unzip zip tar \
+    unzip zip tar starship rofi mako \
     zoxide eza zsh jq fzf \
     grim slurp cliphist wl-clipboard
 
@@ -128,6 +128,9 @@ setup_hyprland() {
 
   install_packages upower
   systemctl enable upower.service
+
+  systemctl enable iwd.service
+  systemctl enable bluetooth.service
 
   mkdir -p "$CONFIG_DIR/hypr"
 
@@ -144,7 +147,7 @@ setup_misc() {
 
   install_packages \
     fastfetch btop lazygit lazydocker which flatpak pavucontrol \
-    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool starship
+    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool impala
 
   success "Misc tools installed"
 }
