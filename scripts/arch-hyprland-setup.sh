@@ -86,6 +86,18 @@ install_packages() {
 }
 
 ########################################
+# Safe service enable (non-fatal)
+########################################
+enable_service() {
+  local svc="$1"
+  if systemctl enable "$svc" 2>/dev/null; then
+    log "Enabled $svc"
+  else
+    warn "$svc not available, skipping"
+  fi
+}
+
+########################################
 # Setup SDDM
 ########################################
 setup_sddm() {
@@ -94,6 +106,7 @@ setup_sddm() {
   install_packages sddm rsync
 
   mkdir -p "$SDDM_CONF_DIR"
+  mkdir -p "$SDDM_THEME_DIR/void"
 
   cat >"$SDDM_CONF_DIR/theme.conf" <<EOF
 [Theme]
@@ -104,7 +117,7 @@ EOF
 
   chmod 644 "$SDDM_CONF_DIR/theme.conf"
 
-  systemctl enable sddm.service
+  enable_service sddm.service
 
   success "SDDM configured"
 }
@@ -115,26 +128,22 @@ EOF
 setup_hyprland() {
   section "SETTING UP HYPRLAND"
 
+  # Install all Hyprland-related packages in one pass
   install_packages \
     unzip zip tar starship rofi mako \
     zoxide eza zsh jq fzf \
-    grim slurp cliphist wl-clipboard
+    grim slurp cliphist wl-clipboard \
+    alacritty quickshell firefox yazi \
+    hyprland hyprlock hyprpaper \
+    upower
 
-  install_packages \
-    alacritty quickshell firefox yazi
-
-  install_packages \
-    hyprland hyprlock hyprpaper
-
-  install_packages upower
-  systemctl enable upower.service
-
-  systemctl enable iwd.service
-  systemctl enable bluetooth.service
+  enable_service upower.service
+  enable_service iwd.service
+  enable_service bluetooth.service
 
   mkdir -p "$CONFIG_DIR/hypr"
-
   rsync -av "$DOTFILES_REPO/hypr/" "$CONFIG_DIR/hypr/"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/hypr"
 
   success "Hyprland setup complete"
 }
@@ -153,14 +162,14 @@ setup_misc() {
 }
 
 ########################################
-# Git setup
+# Git setup (runs as actual user)
 ########################################
 setup_git() {
   section "GIT SETUP"
 
-  git config --global user.email "thanhlongvu156@gmail.com"
-  git config --global user.name "have2b"
-  git config --global core.pager "cat"
+  sudo -u "$ACTUAL_USER" git config --global user.email "thanhlongvu156@gmail.com"
+  sudo -u "$ACTUAL_USER" git config --global user.name "have2b"
+  sudo -u "$ACTUAL_USER" git config --global core.pager "cat"
 
   success "Git setup completed"
 }
@@ -173,53 +182,55 @@ copy_config() {
 
   mkdir -p "$CONFIG_DIR"
 
-  rsync -av "$DOTFILES_REPO/zsh/.zshrc" "$ACTUAL_HOME/.zshrc"
-
   rsync -av "$DOTFILES_REPO/quickshell" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
   rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
   rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
-
   rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
 
-  chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$ACTUAL_HOME/.zshrc" "$CONFIG_DIR"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
 
   success "Configuration files installed"
 }
 
 ########################################
-# Copy configuration
+# Setup ZSH
 ########################################
 setup_zsh() {
   section "SETTING UP ZSH"
+
+  install_packages zsh
 
   ANTIDOTE_HOME="${ACTUAL_HOME}/.local/share/antidote"
   ZSH_PLUGIN_FILE="${ANTIDOTE_HOME}/.zsh_plugins.txt"
   ZSH_BUNDLE_FILE="${ANTIDOTE_HOME}/.zsh_plugins.zsh"
 
-  # Ensure directory exists
   mkdir -p "$ANTIDOTE_HOME"
 
   # Install Antidote if missing
-  if [ ! -d "$ANTIDOTE_HOME/.git" ]; then
-    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
+  if [[ ! -d "$ANTIDOTE_HOME/.git" ]]; then
+    sudo -u "$ACTUAL_USER" git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
   fi
 
-  # Sync configs
-  rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
-  rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
+  # Sync configs as actual user (avoids root-owned files)
+  sudo -u "$ACTUAL_USER" rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
+  sudo -u "$ACTUAL_USER" rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
 
-  # Build plugin bundle (IMPORTANT)
-  "$ANTIDOTE_HOME/antidote.zsh" bundle < "$ZSH_PLUGIN_FILE" > "$ZSH_BUNDLE_FILE"
+  # Build plugin bundle as actual user
+  sudo -u "$ACTUAL_USER" bash -c "
+    \"$ANTIDOTE_HOME/antidote.zsh\" bundle < \"$ZSH_PLUGIN_FILE\" > \"$ZSH_BUNDLE_FILE\"
+  "
 
   # Change shell safely
   ZSH_PATH="$(command -v zsh)"
   if grep -q "$ZSH_PATH" /etc/shells; then
     chsh -s "$ZSH_PATH" "$ACTUAL_USER"
   else
-    echo "$ZSH_PATH not in /etc/shells, skipping chsh"
+    warn "$ZSH_PATH not in /etc/shells, skipping chsh"
   fi
+
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ANTIDOTE_HOME" "$ACTUAL_HOME/.zshrc"
 
   success "Zsh setup complete"
 }
@@ -243,7 +254,7 @@ setup_tmux() {
 
   mkdir -p "$CONFIG_DIR/tmux"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
-  chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$CONFIG_DIR/tmux" "$tpm_dir"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/tmux" "$tpm_dir"
 
   success "tmux setup complete"
 }
@@ -278,21 +289,19 @@ install_paru() {
 
   install_packages base-devel git
 
-  local tmp_dir="/tmp/paru-build"
+  # Use mktemp to avoid conflicts with concurrent runs
+  local tmp_dir
+  tmp_dir=$(sudo -u "$ACTUAL_USER" mktemp -d)
 
   log "Cloning paru repository"
+  sudo -u "$ACTUAL_USER" git clone https://aur.archlinux.org/paru.git "$tmp_dir"
 
-  sudo -u "$ACTUAL_USER" bash -c "
-    rm -rf $tmp_dir
-    git clone https://aur.archlinux.org/paru.git $tmp_dir
-  "
+  log "Building paru"
+  # Build without -i (install); install the resulting package as root via pacman
+  sudo -u "$ACTUAL_USER" bash -c "cd \"$tmp_dir\" && makepkg -s --noconfirm"
 
-  log "Building and installing paru"
-
-  sudo -u "$ACTUAL_USER" bash -c "
-    cd $tmp_dir
-    makepkg -si --noconfirm
-  "
+  log "Installing paru package"
+  pacman -U --noconfirm "$tmp_dir"/paru-*.pkg.tar.zst
 
   rm -rf "$tmp_dir"
 
@@ -308,6 +317,8 @@ main() {
   check_root
   check_command pacman
   check_command systemctl
+  check_command rsync
+  check_command git
 
   if [[ ! -d "$DOTFILES_REPO" ]]; then
     error "Dotfiles repo not found at $DOTFILES_REPO"
@@ -323,7 +334,9 @@ main() {
   copy_config
   setup_git
 
+  section "SETUP COMPLETE"
   success "System setup completed successfully"
+  warn "Log out and back in for group changes (docker) and shell change (zsh) to take effect."
 }
 
 main
