@@ -1,0 +1,46 @@
+/* =============================================================================
+ * Rofi — Main Configuration
+ * Catppuccin Mocha  ·  JetBrainsMono Nerd Font
+ * =========================================================================== */
+
+configuration {
+
+    /* ── Modes ─────────────────────────────────────────── */
+    modi:                       "drun,run,window";
+
+    /* ── Display labels for each mode ──────────────────── */
+    display-drun:               "󰣇  Apps";
+    display-run:                "  Run";
+    display-window:             "  Windows";
+
+    /* ── Typography ─────────────────────────────────────── */
+    font:                       "JetBrainsMono Nerd Font 12";
+
+    /* ── Icons ──────────────────────────────────────────── */
+    show-icons:                 true;
+    icon-theme:                 "Papirus";   /* change to your icon theme */
+
+    /* ── Application launcher ───────────────────────────── */
+    drun-display-format:        "{name}";
+    drun-url-launcher:          "xdg-open";
+
+    /* ── Behaviour ──────────────────────────────────────── */
+    sidebar-mode:               false;
+    cycle:                      true;
+    steal-focus:                true;
+
+    /* ── Terminal (used by run mode) ─────────────────────── */
+    terminal:                   "kitty";
+
+    /* ── Matching ───────────────────────────────────────── */
+    matching:                   "fuzzy";
+
+    /* ── Keybindings ────────────────────────────────────── */
+    kb-cancel:                  "Escape,Super+space";
+    kb-accept-entry:            "Return,KP_Enter";
+    kb-row-up:                  "Up,Control+p";
+    kb-row-down:                "Down,Control+n";
+}
+
+/* Load the Catppuccin Mocha theme */
+@theme "~/.config/rofi/themes/catppuccin-mocha.rasi"
