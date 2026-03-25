@@ -1,63 +1,252 @@
+/* =============================================================================
+ * Catppuccin Mocha palette
+ * =========================================================================== */
+
+/* base     #1e1e2e */
+/* mantle   #181825 */
+/* surface0 #313244 */
+/* surface1 #45475a */
+/* overlay0 #6c7086 */
+/* overlay1 #7f849c */
+/* text      #cdd6f4 */
+/* subtext0  #a6adc8 */
+/* blue      #89b4fa */
+/* lavender  #b4befe */
+/* sapphire  #74c7ec */
+/* sky       #89dceb */
+/* teal      #94e2d5 */
+/* green     #a6e3a1 */
+/* yellow    #f9e2af */
+/* peach     #fab387 */
+/* maroon    #eba0ac */
+/* red       #f38ba8 */
+/* mauve     #cba6f7 */
+/* pink      #f5c2e7 */
+
+/* =============================================================================
+ * Global reset
+ * =========================================================================== */
+
 * {
-  font-family: JetBrainsMono Nerd Font, monospace;
-  font-size: 13px;
+  font-family: "JetBrainsMono Nerd Font", monospace;
+  font-size: 12;
+  font-weight: 500;
   min-height: 0;
+  border: none;
+  border-radius: 0;
 }
 
-/* Main bar */
+/* =============================================================================
+ * Main bar window — transparent background so the three pills float freely
+ * =========================================================================== */
+
 window#waybar {
-  background-color: #1e1e2e;
+  background: transparent;
   color: #cdd6f4;
-  padding: 2px 6px;
-  border-bottom: 1px solid #ffffff;
-  border-radius: 0 0 8px 8px;
 }
 
-/* All modules spacing */
+/* =============================================================================
+ * Three floating pills — left, center, right
+ * =========================================================================== */
+
+.modules-left,
+.modules-center,
+.modules-right {
+  background-color: #1e1e2e;
+  border-radius: 16px;
+  padding: 0 6px;
+}
+
+/* =============================================================================
+ * Shared module defaults
+ * =========================================================================== */
+
+#custom-launcher,
+#workspaces,
+#window,
 #clock,
-#battery,
 #network,
+#battery,
 #cpu,
 #memory,
 #wireplumber,
-#tray,
-#window,
-#custom-launcher {
-  padding: 0 12px;
-  margin: 0 4px;
-}
-
-#custom-launcher {
-  color: #1793d1;
-}
-
-
-/* Workspace buttons */
-#workspaces button {
-  padding: 4px;
-  margin: 0 3px;
-  border-radius: 6px;
+#tray {
   color: #cdd6f4;
-  background: transparent;
+  padding: 4px 10px;
+  margin: 0px 2px;
 }
 
-/* Active workspace */
+/* =============================================================================
+ * Launcher button
+ * =========================================================================== */
+
+#custom-launcher {
+  font-size: 17px;
+  color: #89b4fa;
+  padding: 4px 12px 4px 10px;
+  margin-right: 2px;
+}
+
+#custom-launcher:hover {
+  color: #b4befe;
+}
+
+/* =============================================================================
+ * Workspaces
+ * =========================================================================== */
+
+#workspaces {
+  padding: 0 2px;
+  margin: 0;
+}
+
+#workspaces button {
+  padding: 4px 10px;
+  margin: 2px 2px;
+  border-radius: 12px;
+  color: #6c7086;
+  background: transparent;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
 #workspaces button.active {
   background-color: #89b4fa;
   color: #1e1e2e;
+  font-weight: 700;
 }
 
-/* Hover effect */
+#workspaces button.urgent {
+  background-color: #f38ba8;
+  color: #1e1e2e;
+}
+
 #workspaces button:hover {
   background-color: #313244;
+  color: #cdd6f4;
 }
 
-/* Active window title */
+/* =============================================================================
+ * Active window title
+ * =========================================================================== */
+
 #window {
-  padding-left: 10px;
+  color: #a6adc8;
+  font-style: italic;
+  padding-left: 6px;
 }
 
-/* Tray spacing */
+/* =============================================================================
+ * Clock
+ * =========================================================================== */
+
+#clock {
+  color: #cdd6f4;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* =============================================================================
+ * Network
+ * =========================================================================== */
+
+#network {
+  color: #89dceb;
+}
+
+#network.disconnected {
+  color: #6c7086;
+}
+
+/* =============================================================================
+ * Battery
+ * =========================================================================== */
+
+#battery {
+  color: #a6e3a1;
+}
+
+#battery.warning {
+  color: #f9e2af;
+}
+
+#battery.critical {
+  color: #f38ba8;
+  animation: blink 1s linear infinite;
+}
+
+#battery.charging {
+  color: #a6e3a1;
+}
+
+@keyframes blink {
+  to {
+    color: #1e1e2e;
+    background-color: #f38ba8;
+    border-radius: 12px;
+  }
+}
+
+/* =============================================================================
+ * CPU
+ * =========================================================================== */
+
+#cpu {
+  color: #fab387;
+}
+
+#cpu.warning {
+  color: #f9e2af;
+}
+
+#cpu.critical {
+  color: #f38ba8;
+}
+
+/* =============================================================================
+ * Memory
+ * =========================================================================== */
+
+#memory {
+  color: #f38ba8;
+}
+
+#memory.warning {
+  color: #f9e2af;
+}
+
+#memory.critical {
+  color: #f38ba8;
+  font-weight: 700;
+}
+
+/* =============================================================================
+ * Audio (wireplumber)
+ * =========================================================================== */
+
+#wireplumber {
+  color: #cba6f7;
+}
+
+#wireplumber.muted {
+  color: #6c7086;
+}
+
+/* =============================================================================
+ * System tray
+ * =========================================================================== */
+
+#tray {
+  padding: 4px 10px;
+  margin: 2px 2px;
+}
+
 #tray > .passive {
-  margin: 0 3px;
+  -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+  -gtk-icon-effect: highlight;
+  background-color: #f38ba8;
+  border-radius: 8px;
 }
