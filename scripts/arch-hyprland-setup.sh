@@ -182,7 +182,6 @@ copy_config() {
 
   mkdir -p "$CONFIG_DIR"
 
-  rsync -av "$DOTFILES_REPO/quickshell" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
@@ -208,6 +207,7 @@ setup_zsh() {
   ZSH_BUNDLE_FILE="${ANTIDOTE_HOME}/.zsh_plugins.zsh"
 
   mkdir -p "$ANTIDOTE_HOME"
+  mkdir -p "$ACTUAL_HOME/.local/share/zoxide"
 
   # Install Antidote if missing
   if [[ ! -d "$ANTIDOTE_HOME/.git" ]]; then
@@ -226,7 +226,7 @@ setup_zsh() {
     warn "$ZSH_PATH not in /etc/shells, skipping chsh"
   fi
 
-  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ANTIDOTE_HOME" "$ACTUAL_HOME/.zshrc"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ACTUAL_HOME/.local" "$ACTUAL_HOME/.zshrc"
 
   success "Zsh setup complete"
 }
