@@ -10,7 +10,7 @@ startup_mode = "Maximized"
 
 [font]
 normal.family = "JetBrainsMono Nerd Font"
-size = 16
+size = 12
 
 [colors.primary]
 background = "#181825"

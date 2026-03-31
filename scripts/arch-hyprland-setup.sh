@@ -205,7 +205,6 @@ setup_zsh() {
 
   ANTIDOTE_HOME="${ACTUAL_HOME}/.local/share/antidote"
   ZSH_PLUGIN_FILE="${ANTIDOTE_HOME}/.zsh_plugins.txt"
-  ZSH_BUNDLE_FILE="${ANTIDOTE_HOME}/.zsh_plugins.zsh"
 
   mkdir -p "$ANTIDOTE_HOME"
   mkdir -p "$ACTUAL_HOME/.local/share/zoxide"
@@ -262,7 +261,7 @@ setup_tmux() {
 install_docker() {
   section "INSTALLING DOCKER"
 
-  install_packages docker
+  install_packages docker minikube
 
   log "Enabling Docker service"
   systemctl enable --now docker.service
@@ -305,19 +304,6 @@ install_paru() {
   success "paru installed"
 }
 
-#########################################
-# Install mise (CLI tool installer)
-#########################################
-install_mise() {
-  section "INSTALLING MISE"
-
-  curl https://mise.run | sh
-
-  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ACTUAL_HOME/.local"
-
-  success "mise installed"
-}
-
 install_fonts() {
   section "INSTALLING FONTS"
 
@@ -346,7 +332,6 @@ main() {
   setup_tmux
   install_docker
   install_paru
-  install_mise
   copy_config
   setup_git
   install_fonts
@@ -356,4 +341,3 @@ main() {
 }
 
 main
-
