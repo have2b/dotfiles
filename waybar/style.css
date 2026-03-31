@@ -55,6 +55,7 @@ window#waybar {
   background-color: #1e1e2e;
   border-radius: 16px;
   padding: 0 6px;
+  border: 1px solid #ffffff;
 }
 
 /* =============================================================================
