@@ -1,0 +1,349 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+########################################
+# Colors
+########################################
+RED="\033[0;31m"
+GREEN="\033[0;32m"
+YELLOW="\033[1;33m"
+BLUE="\033[1;34m"
+CYAN="\033[0;36m"
+RESET="\033[0m"
+
+########################################
+# Logging
+########################################
+log() {
+  echo -e "${BLUE}[INFO]${RESET} $1"
+}
+
+success() {
+  echo -e "${GREEN}[SUCCESS]${RESET} $1"
+}
+
+warn() {
+  echo -e "${YELLOW}[WARN]${RESET} $1"
+}
+
+error() {
+  echo -e "${RED}[ERROR]${RESET} $1"
+  exit 1
+}
+
+section() {
+  echo
+  echo -e "${CYAN}========== $1 ==========${RESET}"
+}
+
+########################################
+# Detect actual user
+########################################
+if [[ -n "${SUDO_USER:-}" ]]; then
+  ACTUAL_USER="$SUDO_USER"
+  ACTUAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
+else
+  ACTUAL_USER="$USER"
+  ACTUAL_HOME="$HOME"
+fi
+
+DOTFILES_REPO="$ACTUAL_HOME/main/dotfiles"
+CONFIG_DIR="$ACTUAL_HOME/.config"
+
+SDDM_CONF_DIR="/etc/sddm.conf.d"
+SDDM_THEME_DIR="/usr/share/sddm/themes"
+
+########################################
+# Checks
+########################################
+check_root() {
+  [[ $EUID -eq 0 ]] || error "Run this script with sudo."
+}
+
+check_command() {
+  command -v "$1" >/dev/null 2>&1 || error "$1 is not installed."
+}
+
+########################################
+# Install packages
+########################################
+install_packages() {
+  local to_install=()
+
+  for pkg in "$@"; do
+    if rpm -q "$pkg" >/dev/null 2>&1; then
+      log "$pkg already installed"
+    else
+      to_install+=("$pkg")
+    fi
+  done
+
+  if [[ ${#to_install[@]} -gt 0 ]]; then
+    log "Installing packages: ${to_install[*]}"
+    dnf install -y "${to_install[@]}"
+    success "Package installation completed"
+  fi
+}
+
+########################################
+# Safe service enable (non-fatal)
+########################################
+enable_service() {
+  local svc="$1"
+  if systemctl enable "$svc" 2>/dev/null; then
+    log "Enabled $svc"
+  else
+    warn "$svc not available, skipping"
+  fi
+}
+
+########################################
+# Enable COPR repositories
+########################################
+setup_copr_repos() {
+  section "ENABLING COPR REPOSITORIES"
+
+  install_packages dnf-plugins-core
+
+  log "Enabling solopasha/hyprland (Hyprland ecosystem)"
+  dnf copr enable -y solopasha/hyprland
+
+  log "Enabling atim/starship"
+  dnf copr enable atim/starship
+
+  log "Enabling alternateved/eza"
+  dnf copr enable alternateved/eza
+
+  log "Enabling atim/lazydocker"
+  dnf copr enable -y atim/lazydocker
+
+  success "COPR repositories enabled"
+}
+
+########################################
+# Add Docker CE repository
+########################################
+setup_docker_repo() {
+  log "Adding Docker CE repository"
+
+  dnf config-manager addrepo --from-repofile https://download.docker.com/linux/fedora/docker-ce.repo
+
+  success "Docker CE repository added"
+}
+
+########################################
+# Setup SDDM
+########################################
+setup_sddm() {
+  section "SETTING UP SDDM"
+
+  install_packages sddm rsync
+
+  mkdir -p "$SDDM_CONF_DIR"
+  mkdir -p "$SDDM_THEME_DIR/void"
+
+  cat >"$SDDM_CONF_DIR/theme.conf" <<EOF
+[Theme]
+Current=void
+EOF
+
+  rsync -av "$DOTFILES_REPO/void/" "$SDDM_THEME_DIR/void/"
+
+  chmod 644 "$SDDM_CONF_DIR/theme.conf"
+
+  enable_service sddm.service
+
+  success "SDDM configured"
+}
+
+########################################
+# Setup Hyprland
+########################################
+setup_hyprland() {
+  section "SETTING UP HYPRLAND"
+
+  install_packages \
+    unzip zip tar starship rofi-wayland mako waybar \
+    zoxide eza zsh jq fzf \
+    grim slurp cliphist wl-clipboard \
+    alacritty firefox \
+    hyprland hyprlock hyprpaper \
+    upower
+
+  enable_service upower.service
+  enable_service iwd.service
+  enable_service bluetooth.service
+
+  mkdir -p "$CONFIG_DIR/hypr"
+  rsync -av "$DOTFILES_REPO/hypr/" "$CONFIG_DIR/hypr/"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/hypr"
+
+  success "Hyprland setup complete"
+}
+
+########################################
+# Misc tools
+########################################
+setup_misc() {
+  section "INSTALLING MISC TOOLS"
+
+  install_packages \
+    fastfetch btop lazydocker which flatpak pavucontrol \
+    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool
+
+  success "Misc tools installed"
+}
+
+########################################
+# Git setup (runs as actual user)
+########################################
+setup_git() {
+  section "GIT SETUP"
+
+  sudo -u "$ACTUAL_USER" git config --global user.email "thanhlongvu156@gmail.com"
+  sudo -u "$ACTUAL_USER" git config --global user.name "have2b"
+  sudo -u "$ACTUAL_USER" git config --global core.pager "cat"
+
+  success "Git setup completed"
+}
+
+########################################
+# Copy configuration
+########################################
+copy_config() {
+  section "SYNCING CONFIGURATION FILES"
+
+  mkdir -p "$CONFIG_DIR"
+
+  rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/tmux" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/waybar" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/fastfetch" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/nvim" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR"
+
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
+
+  success "Configuration files installed"
+}
+
+########################################
+# Setup ZSH
+########################################
+setup_zsh() {
+  section "SETTING UP ZSH"
+
+  install_packages zsh
+
+  ANTIDOTE_HOME="${ACTUAL_HOME}/.local/share/antidote"
+  ZSH_PLUGIN_FILE="${ANTIDOTE_HOME}/.zsh_plugins.txt"
+
+  mkdir -p "$ANTIDOTE_HOME"
+  mkdir -p "$ACTUAL_HOME/.local/share/zoxide"
+
+  if [[ ! -d "$ANTIDOTE_HOME/.git" ]]; then
+    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
+  fi
+
+  rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
+  rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
+
+  ZSH_PATH="$(command -v zsh)"
+  if grep -q "$ZSH_PATH" /etc/shells; then
+    chsh -s "$ZSH_PATH" "$ACTUAL_USER"
+  else
+    warn "$ZSH_PATH not in /etc/shells, skipping chsh"
+  fi
+
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ACTUAL_HOME/.local" "$ACTUAL_HOME/.zshrc"
+
+  success "Zsh setup complete"
+}
+
+########################################
+# Setup tmux
+########################################
+setup_tmux() {
+  section "SETTING UP TMUX"
+
+  install_packages tmux git
+
+  local tpm_dir="$ACTUAL_HOME/.tmux/plugins/tpm"
+
+  if [[ -d "$tpm_dir" ]]; then
+    log "TPM already installed"
+  else
+    log "Installing TPM (Tmux Plugin Manager)"
+    sudo -u "$ACTUAL_USER" git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+  fi
+
+  mkdir -p "$CONFIG_DIR/tmux"
+  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/tmux" "$tpm_dir"
+
+  success "tmux setup complete"
+}
+
+########################################
+# Install Docker
+########################################
+install_docker() {
+  section "INSTALLING DOCKER"
+
+  setup_docker_repo
+
+  install_packages \
+    docker-ce docker-ce-cli containerd.io docker-compose-plugin minikube
+
+  log "Enabling Docker service"
+  systemctl enable --now docker.service
+
+  log "Adding $ACTUAL_USER to docker group"
+  usermod -aG docker "$ACTUAL_USER"
+
+  success "Docker installed and configured"
+}
+
+########################################
+# Install fonts
+########################################
+install_fonts() {
+  section "INSTALLING FONTS"
+
+  install_packages \
+    jetbrains-mono-fonts-all \
+    google-noto-sans-fonts google-noto-cjk-fonts google-noto-emoji-fonts
+
+  success "Fonts installed"
+}
+
+########################################
+# Main
+########################################
+main() {
+  section "FEDORA SYSTEM SETUP WITH HYPRLAND"
+
+  check_root
+
+  if [[ ! -d "$DOTFILES_REPO" ]]; then
+    error "Dotfiles repo not found at $DOTFILES_REPO"
+  fi
+
+  setup_copr_repos
+  setup_sddm
+  setup_hyprland
+  setup_zsh
+  setup_misc
+  setup_tmux
+  install_docker
+  copy_config
+  setup_git
+  install_fonts
+
+  section "SETUP COMPLETE"
+  success "System setup completed successfully"
+  warn "Log out and back in for group changes (docker) and shell change (zsh) to take effect."
+}
+
+main
