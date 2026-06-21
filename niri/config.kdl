@@ -277,10 +277,10 @@ binds {
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
-    Mod+D hotkey-overlay-title="Open Applauncher" { spawn-sh "qs -c noctalia-shell ipc call launcher toggle"; }
-    Mod+I hotkey-overlay-title="Open Settings" { spawn-sh "qs -c noctalia-shell ipc call settings open"; }
+    Mod+D hotkey-overlay-title="Open Applauncher: rofi" { spawn "rofi" "-show" "drun"; }
+    Mod+I hotkey-overlay-title="Switch Window: rofi" { spawn "rofi" "-show" "window"; }
     Super+Shift+W hotkey-overlay-title="Open Browser: firefox" { spawn "firefox"; }
-    Super+L hotkey-overlay-title="Lock the Screen: noctalia" { spawn-sh "qs -c noctalia-shell ipc call lockScreen lock"; }
+    Super+L hotkey-overlay-title="Lock the Screen: hyprlock" { spawn "hyprlock"; }
 
     // Example volume keys mappings for PipeWire & WirePlumber.
     // The allow-when-locked=true property makes them work even when the session is locked.
@@ -522,7 +522,8 @@ binds {
     Mod+Shift+E { quit; }
     Ctrl+Alt+Delete { quit; }
 }
-spawn-at-startup "qs" "-c" "noctalia-shell" "--no-duplicate"
+spawn-at-startup "waybar"
+spawn-at-startup "mako"
 spawn-sh-at-startup "export GTK_IM_MODULE=fcitx"
 spawn-sh-at-startup "export QT_IM_MODULE=fcitx"
 spawn-sh-at-startup "export XMODIFIERS=@im=fcitx"
