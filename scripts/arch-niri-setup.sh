@@ -86,6 +86,18 @@ install_packages() {
 }
 
 ########################################
+# Safe service enable (non-fatal)
+########################################
+enable_service() {
+  local svc="$1"
+  if systemctl enable "$svc" 2>/dev/null; then
+    log "Enabled $svc"
+  else
+    warn "$svc not available, skipping"
+  fi
+}
+
+########################################
 # Setup SDDM
 ########################################
 setup_sddm() {
@@ -94,6 +106,7 @@ setup_sddm() {
   install_packages sddm rsync
 
   mkdir -p "$SDDM_CONF_DIR"
+  mkdir -p "$SDDM_THEME_DIR/void"
 
   cat >"$SDDM_CONF_DIR/theme.conf" <<EOF
 [Theme]
@@ -104,7 +117,7 @@ EOF
 
   chmod 644 "$SDDM_CONF_DIR/theme.conf"
 
-  systemctl enable sddm.service
+  enable_service sddm.service
 
   success "SDDM configured"
 }
@@ -115,23 +128,23 @@ EOF
 setup_niri() {
   section "SETTING UP NIRI"
 
+  # Install all Niri-related packages in one pass
   install_packages \
-    unzip zip tar \
+    unzip zip tar starship rofi waybar mako \
     zoxide eza zsh jq fzf \
-    grim slurp cliphist wl-clipboard
+    grim slurp cliphist wl-clipboard \
+    alacritty firefox yazi \
+    niri xwayland-satellite hyprlock \
+    pipewire wireplumber playerctl brightnessctl \
+    upower
 
-  install_packages \
-    quickshell alacritty firefox yazi
-
-  install_packages upower
-  systemctl enable upower.service
-
-  install_packages \
-    niri swaybg swaylock
+  enable_service upower.service
+  enable_service iwd.service
+  enable_service bluetooth.service
 
   mkdir -p "$CONFIG_DIR/niri"
-
   rsync -av "$DOTFILES_REPO/niri/" "$CONFIG_DIR/niri/"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/niri"
 
   success "Niri setup complete"
 }
@@ -143,24 +156,83 @@ setup_misc() {
   section "INSTALLING MISC TOOLS"
 
   install_packages \
-    fastfetch btop lazygit lazydocker \
-    which flatpak pavucontrol bitwarden-cli \
-    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool
+    fastfetch btop lazygit lazydocker which flatpak pavucontrol \
+    openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool impala
 
   success "Misc tools installed"
 }
 
 ########################################
-# Git setup
+# Git setup (runs as actual user)
 ########################################
 setup_git() {
   section "GIT SETUP"
 
-  git config --global user.email "thanhlongvu156@gmail.com"
-  git config --global user.name "have2b"
-  git config --global core.pager "cat"
+  sudo -u "$ACTUAL_USER" git config --global user.email "thanhlongvu156@gmail.com"
+  sudo -u "$ACTUAL_USER" git config --global user.name "have2b"
+  sudo -u "$ACTUAL_USER" git config --global core.pager "cat"
 
   success "Git setup completed"
+}
+
+########################################
+# Copy configuration
+########################################
+copy_config() {
+  section "SYNCING CONFIGURATION FILES"
+
+  mkdir -p "$CONFIG_DIR"
+
+  rsync -av "$DOTFILES_REPO/alacritty" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/tmux" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/rofi" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/waybar" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/fastfetch" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/nvim" "$CONFIG_DIR"
+  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR"
+
+  mkdir -p "$CONFIG_DIR/hypr"
+  rsync -av "$DOTFILES_REPO/hypr/hyprlock.conf" "$CONFIG_DIR/hypr/hyprlock.conf"
+
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
+
+  success "Configuration files installed"
+}
+
+########################################
+# Setup ZSH
+########################################
+setup_zsh() {
+  section "SETTING UP ZSH"
+
+  install_packages zsh
+
+  ANTIDOTE_HOME="${ACTUAL_HOME}/.local/share/antidote"
+  ZSH_PLUGIN_FILE="${ANTIDOTE_HOME}/.zsh_plugins.txt"
+
+  mkdir -p "$ANTIDOTE_HOME"
+  mkdir -p "$ACTUAL_HOME/.local/share/zoxide"
+
+  # Install Antidote if missing
+  if [[ ! -d "$ANTIDOTE_HOME/.git" ]]; then
+    git clone --depth=1 https://github.com/mattmc3/antidote.git "$ANTIDOTE_HOME"
+  fi
+
+  # Sync configs as actual user (avoids root-owned files)
+  rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
+  rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$ZSH_PLUGIN_FILE"
+
+  # Change shell safely
+  ZSH_PATH="$(command -v zsh)"
+  if grep -q "$ZSH_PATH" /etc/shells; then
+    chsh -s "$ZSH_PATH" "$ACTUAL_USER"
+  else
+    warn "$ZSH_PATH not in /etc/shells, skipping chsh"
+  fi
+
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$ACTUAL_HOME/.local" "$ACTUAL_HOME/.zshrc"
+
+  success "Zsh setup complete"
 }
 
 ########################################
@@ -182,34 +254,9 @@ setup_tmux() {
 
   mkdir -p "$CONFIG_DIR/tmux"
   rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
-  chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$CONFIG_DIR/tmux" "$tpm_dir"
+  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/tmux" "$tpm_dir"
 
   success "tmux setup complete"
-}
-
-########################################
-# Copy configuration
-########################################
-copy_config() {
-  section "SYNCING CONFIGURATION FILES"
-
-  mkdir -p "$CONFIG_DIR"
-
-  rsync -av "$DOTFILES_REPO/zsh/.zshrc" "$ACTUAL_HOME/.zshrc"
-  rsync -av "$DOTFILES_REPO/quickshell" "$ACTUAL_HOME/quickshell"
-
-  rsync -av "$DOTFILES_REPO/alacritty/" "$CONFIG_DIR/alacritty/"
-  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
-  rsync -av "$DOTFILES_REPO/fastfetch/" "$CONFIG_DIR/fastfetch/"
-  rsync -av "$DOTFILES_REPO/nvim/" "$CONFIG_DIR/nvim/"
-
-  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
-
-  chown -R "$ACTUAL_USER:$(id -gn $ACTUAL_USER)" "$ACTUAL_HOME/.zshrc" "$CONFIG_DIR"
-
-  chsh -s "$(which zsh)" "$ACTUAL_USER"
-
-  success "Configuration files installed"
 }
 
 ########################################
@@ -242,25 +289,36 @@ install_paru() {
 
   install_packages base-devel git
 
-  local tmp_dir="/tmp/paru-build"
+  # Use mktemp to avoid conflicts with concurrent runs
+  local tmp_dir
+  tmp_dir=$(sudo -u "$ACTUAL_USER" mktemp -d)
 
   log "Cloning paru repository"
+  sudo -u "$ACTUAL_USER" git clone https://aur.archlinux.org/paru.git "$tmp_dir"
 
-  sudo -u "$ACTUAL_USER" bash -c "
-    rm -rf $tmp_dir
-    git clone https://aur.archlinux.org/paru.git $tmp_dir
-  "
+  log "Building paru"
+  # Build without -i (install); install the resulting package as root via pacman
+  sudo -u "$ACTUAL_USER" bash -c "cd \"$tmp_dir\" && makepkg -s --noconfirm"
 
-  log "Building and installing paru"
-
-  sudo -u "$ACTUAL_USER" bash -c "
-    cd $tmp_dir
-    makepkg -si --noconfirm
-  "
+  log "Installing paru package"
+  pacman -U --noconfirm "$tmp_dir"/paru-*.pkg.tar.zst
 
   rm -rf "$tmp_dir"
 
   success "paru installed"
+}
+
+########################################
+# Install fonts
+########################################
+install_fonts() {
+  section "INSTALLING FONTS"
+
+  install_packages \
+    ttf-jetbrains-mono-nerd ttf-jetbrains-mono \
+    noto-fonts noto-fonts-cjk noto-fonts-emoji
+
+  success "Fonts installed"
 }
 
 ########################################
@@ -270,23 +328,25 @@ main() {
   section "ARCH SYSTEM SETUP WITH NIRI"
 
   check_root
-  check_command pacman
-  check_command systemctl
 
   if [[ ! -d "$DOTFILES_REPO" ]]; then
     error "Dotfiles repo not found at $DOTFILES_REPO"
   fi
 
   setup_sddm
-  setup_hyprland
+  setup_niri
+  setup_zsh
   setup_misc
   setup_tmux
   install_docker
   install_paru
   copy_config
   setup_git
+  install_fonts
 
+  section "SETUP COMPLETE"
   success "System setup completed successfully"
+  warn "Log out and back in for group changes (docker) and shell change (zsh) to take effect."
 }
 
 main

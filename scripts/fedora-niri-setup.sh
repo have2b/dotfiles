@@ -148,11 +148,8 @@ setup_copr_repos() {
 
   install_packages dnf-plugins-core
 
-  log "Enabling yalter/niri (niri compositor)"
-  dnf copr enable -y yalter/niri
-
-  log "Enabling errornointernet/quickshell"
-  dnf copr enable -y errornointernet/quickshell
+  log "Enabling avengemedia/dms (niri + DankMaterialShell, official Fedora quick-start)"
+  dnf copr enable -y avengemedia/dms
 
   log "Enabling solopasha/hyprland (hyprlock)"
   dnf copr enable -y solopasha/hyprland
@@ -246,10 +243,11 @@ setup_niri() {
   section "SETTING UP NIRI"
 
   install_packages \
-    niri xwayland-satellite \
+    niri dms xwayland-satellite \
     xdg-desktop-portal-gnome xdg-desktop-portal-gtk \
     gnome-keyring mesa-dri-drivers mesa-libEGL \
-    mako
+    alacritty firefox \
+    mako grim slurp cliphist wl-clipboard
 
   enable_service upower.service
   enable_service bluetooth.service
@@ -258,19 +256,10 @@ setup_niri() {
   rsync -av "$DOTFILES_REPO/niri/" "$CONFIG_DIR/niri/"
   chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/niri"
 
+  log "Binding DMS to niri systemd service"
+  sudo -u "$ACTUAL_USER" systemctl --user add-wants niri.service dms
+
   success "Niri setup complete"
-}
-
-########################################
-# Setup Quickshell (install only, no config copy)
-########################################
-setup_quickshell() {
-  section "SETTING UP QUICKSHELL"
-
-  install_packages \
-    quickshell qtsvg qtimageformats qtmultimedia qt5compat
-
-  success "Quickshell installed (config not copied)"
 }
 
 ########################################
@@ -362,6 +351,7 @@ setup_misc() {
     fastfetch btop lazygit lazydocker \
     which flatpak pavucontrol \
     pipewire wireplumber playerctl brightnessctl \
+    fzf jq unzip zip tar \
     openssh fcitx5 fcitx5-qt fcitx5-bamboo fcitx5-configtool
 
   success "Misc tools installed"
@@ -450,7 +440,6 @@ main() {
   setup_iwd
   setup_sddm
   setup_niri
-  setup_quickshell
   setup_desktop_tools
   setup_zsh
   setup_misc
