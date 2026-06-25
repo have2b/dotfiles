@@ -112,7 +112,7 @@ enable_service() {
 setup_zsh() {
   section "SETTING UP ZSH"
 
-  install_packages zsh git
+  install_packages zsh git rsync
 
   local antidote_home="${ACTUAL_HOME}/.local/share/antidote"
   local zsh_plugin_file="${antidote_home}/.zsh_plugins.txt"
