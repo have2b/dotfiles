@@ -112,7 +112,7 @@ fi
 # ==========================================
 if command -v tmux >/dev/null 2>&1; then
     if [[ -z "$TMUX" && -z "$SSH_CONNECTION" && "$TERM_PROGRAM" != "vscode" ]]; then
-        tmux attach -t main 2>/dev/null || tmux new -s main
+        tmux new-session
     fi
 fi
 
