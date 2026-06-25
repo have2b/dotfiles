@@ -206,6 +206,10 @@ install_docker() {
 ########################################
 # Install paru (AUR helper)
 ########################################
+# makepkg refuses to run as root, so we create a temporary unprivileged
+# builder user, run the build as that user, then tear it down.
+PARU_BUILDER_USER="paru-builder"
+
 install_paru() {
   section "INSTALLING PARU"
 
@@ -218,15 +222,35 @@ install_paru() {
 
   local tmp_dir
   tmp_dir=$(mktemp -d)
+  chown "$PARU_BUILDER_USER:$PARU_BUILDER_USER" "$tmp_dir" 2>/dev/null || true
+
+  # Create a temporary builder user if it doesn't exist
+  if ! id "$PARU_BUILDER_USER" >/dev/null 2>&1; then
+    log "Creating temporary builder user: $PARU_BUILDER_USER"
+    useradd -m -G wheel "$PARU_BUILDER_USER"
+    # Allow the builder to use sudo for makepkg -s dependency installs (pacman only)
+    echo "$PARU_BUILDER_USER ALL=(ALL) NOPASSWD: /usr/bin/pacman" \
+      > "/etc/sudoers.d/${PARU_BUILDER_USER}"
+    chmod 440 "/etc/sudoers.d/${PARU_BUILDER_USER}"
+  fi
+
+  chown -R "$PARU_BUILDER_USER:$PARU_BUILDER_USER" "$tmp_dir"
 
   log "Cloning paru repository"
-  git clone https://aur.archlinux.org/paru.git "$tmp_dir"
+  sudo -u "$PARU_BUILDER_USER" git clone \
+    https://aur.archlinux.org/paru.git "$tmp_dir"
 
-  log "Building paru"
-  bash -c "cd \"$tmp_dir\" && makepkg -s --noconfirm"
+  log "Building paru (as $PARU_BUILDER_USER)"
+  sudo -u "$PARU_BUILDER_USER" bash -c \
+    "cd \"$tmp_dir\" && makepkg -s --noconfirm"
 
   log "Installing paru package"
   pacman -U --noconfirm "$tmp_dir"/paru-*.pkg.tar.zst
+
+  # Tear down the temporary builder user and its sudoers entry
+  log "Removing temporary builder user"
+  rm -f "/etc/sudoers.d/${PARU_BUILDER_USER}"
+  userdel -r "$PARU_BUILDER_USER" 2>/dev/null || true
 
   rm -rf "$tmp_dir"
 
