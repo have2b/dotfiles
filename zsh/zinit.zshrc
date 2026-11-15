@@ -10,12 +10,6 @@ fi
 # Source/Load Zinit
 source "${ZINIT_HOME}/zinit.zsh"
 
-# Loading theme
-zinit ice as"command" from"gh-r" \
-          atclone"./starship init zsh > init.zsh; ./starship completions zsh > _starship" \
-          atpull"%atclone" src"init.zsh"
-zinit light starship/starship
-
 # Adding plugins
 zinit light zsh-users/zsh-syntax-highlighting
 zinit light zsh-users/zsh-completions
@@ -30,6 +24,11 @@ zinit snippet OMZP::git
 
 # Load completions FIRST - This should come before any completion-related settings
 autoload -Uz compinit && compinit
+
+# Prompt (starship is installed system-wide by the setup scripts)
+if command -v starship >/dev/null 2>&1; then
+    eval "$(starship init zsh)"
+fi
 
 # Keybindings
 bindkey -e
@@ -68,8 +67,8 @@ zstyle ':completion:*:git-checkout:*' sort false
 zstyle ':completion:*:descriptions' format '[%d]'
 # set list-colors to enable filename colorizing
 zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-# preview directory's content with eza when completing cd
-zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
+# preview directory's content when completing cd
+zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls -1 --color=always $realpath'
 # switch group using `,` and `.`
 zstyle ':fzf-tab:*' switch-group ',' '.'
 # fzf-tab default options
@@ -78,13 +77,12 @@ zstyle ':fzf-tab:*' fzf-flags --height=40% --border --preview-window=right:60%
 
 # Aliases
 alias ff='fastfetch'
-alias ls='eza'
-alias ll='eza -alF'
-alias la='eza -A'
 alias c='clear'
-alias lzd='lazydocker'
-alias lzg='lazygit'
-alias update='sudo pacman -Syu'
+if command -v dnf >/dev/null 2>&1; then
+    alias update='sudo dnf upgrade'
+elif command -v pacman >/dev/null 2>&1; then
+    alias update='sudo pacman -Syu'
+fi
 alias warpc='warp-cli connect'
 alias warpdc='warp-cli disconnect'
 alias q="quarkus"
