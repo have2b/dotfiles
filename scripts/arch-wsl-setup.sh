@@ -27,7 +27,7 @@ warn() {
 }
 
 error() {
-  echo -e "${RED}[ERROR]${RESET} $1"
+  echo -e "${RED}[ERROR]${RESET} $1" >&2
   exit 1
 }
 
@@ -43,22 +43,28 @@ if [[ -n "${SUDO_USER:-}" ]]; then
   ACTUAL_USER="$SUDO_USER"
   ACTUAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
 else
-  ACTUAL_USER="$USER"
-  ACTUAL_HOME="$HOME"
+  ACTUAL_USER="${USER:-$(id -un)}"
+  ACTUAL_HOME="${HOME:-$(getent passwd "$ACTUAL_USER" | cut -d: -f6)}"
 fi
 
+ACTUAL_GROUP="$(id -gn "$ACTUAL_USER")"
 DOTFILES_REPO="$ACTUAL_HOME/main/dotfiles"
 CONFIG_DIR="$ACTUAL_HOME/.config"
 
 ########################################
-# Checks
+# Helpers
 ########################################
 check_root() {
   [[ $EUID -eq 0 ]] || error "Run this script with sudo."
 }
 
-check_command() {
-  command -v "$1" >/dev/null 2>&1 || error "$1 is not installed."
+# Run a command as the real (non-root) user with their own $HOME
+as_user() {
+  sudo -u "$ACTUAL_USER" -H "$@"
+}
+
+fix_owner() {
+  chown -R "$ACTUAL_USER:$ACTUAL_GROUP" "$@"
 }
 
 ########################################
@@ -91,53 +97,55 @@ systemd_is_active() {
 }
 
 ########################################
-# Safe service enable (non-fatal)
+# Update system
 ########################################
-enable_service() {
-  local svc="$1"
-  if systemd_is_active; then
-    if systemctl enable "$svc" 2>/dev/null; then
-      log "Enabled $svc"
-    else
-      warn "$svc not available, skipping"
-    fi
-  else
-    warn "systemd not active (WSL default) — skipping enable of $svc"
+update_system() {
+  section "UPDATING SYSTEM"
+
+  # Fresh Arch WSL images ship without an initialized keyring
+  if [[ ! -f /etc/pacman.d/gnupg/pubring.gpg && ! -f /etc/pacman.d/gnupg/pubring.kbx ]]; then
+    log "Initializing pacman keyring"
+    pacman-key --init
+    pacman-key --populate archlinux
   fi
+
+  pacman -Sy --noconfirm --needed archlinux-keyring
+  pacman -Su --noconfirm
+
+  success "System updated"
 }
 
 ########################################
-# Setup ZSH
+# Setup ZSH (zinit)
 ########################################
 setup_zsh() {
   section "SETTING UP ZSH"
 
   install_packages zsh git rsync
 
-  local antidote_home="${ACTUAL_HOME}/.local/share/antidote"
-  local zsh_plugin_file="${antidote_home}/.zsh_plugins.txt"
+  # Must match ZINIT_HOME in zsh/zinit.zshrc
+  local zinit_home="${ACTUAL_HOME}/.local/share/zinit/zinit.git"
 
-  mkdir -p "$antidote_home"
-  mkdir -p "$ACTUAL_HOME/.local/share/zoxide"
+  as_user mkdir -p "$ACTUAL_HOME/.local/share/zoxide" "$(dirname "$zinit_home")"
 
-  if [[ ! -d "$antidote_home/.git" ]]; then
-    log "Installing Antidote"
-    git clone --depth=1 https://github.com/mattmc3/antidote.git "$antidote_home"
+  if [[ ! -d "$zinit_home/.git" ]]; then
+    log "Installing zinit"
+    as_user git clone --depth=1 https://github.com/zdharma-continuum/zinit.git "$zinit_home"
+  else
+    log "zinit already installed"
   fi
 
-  rsync -av "$DOTFILES_REPO/zsh/antidote.zshrc" "$ACTUAL_HOME/.zshrc"
-  rsync -av "$DOTFILES_REPO/zsh/.zsh_plugins.txt" "$zsh_plugin_file"
+  rsync -av "$DOTFILES_REPO/zsh/zinit.zshrc" "$ACTUAL_HOME/.zshrc"
 
   local zsh_path
   zsh_path="$(command -v zsh)"
-  if grep -q "$zsh_path" /etc/shells; then
+  if grep -qx "$zsh_path" /etc/shells; then
     chsh -s "$zsh_path" "$ACTUAL_USER"
   else
     warn "$zsh_path not in /etc/shells, skipping chsh"
   fi
 
-  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" \
-    "$ACTUAL_HOME/.local" "$ACTUAL_HOME/.zshrc"
+  fix_owner "$ACTUAL_HOME/.local" "$ACTUAL_HOME/.zshrc"
 
   success "Zsh setup complete"
 }
@@ -156,12 +164,11 @@ setup_tmux() {
     log "TPM already installed"
   else
     log "Installing TPM (Tmux Plugin Manager)"
-    git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
+    as_user git clone https://github.com/tmux-plugins/tpm "$tpm_dir"
   fi
 
-  mkdir -p "$CONFIG_DIR/tmux"
-  rsync -av "$DOTFILES_REPO/tmux/" "$CONFIG_DIR/tmux/"
-  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR/tmux" "$tpm_dir"
+  # TPM installs plugins into ~/.tmux/plugins, so the whole tree must be user-owned
+  fix_owner "$ACTUAL_HOME/.tmux"
 
   success "tmux setup complete"
 }
@@ -187,18 +194,20 @@ install_docker() {
 
   install_packages docker
 
+  # The docker group exists once the package is installed, regardless of systemd
+  log "Adding $ACTUAL_USER to docker group"
+  usermod -aG docker "$ACTUAL_USER"
+
   if systemd_is_active; then
     log "Enabling Docker service"
     systemctl enable --now docker.service
-    log "Adding $ACTUAL_USER to docker group"
-    usermod -aG docker "$ACTUAL_USER"
     success "Docker installed and configured"
   else
     warn "systemd is not active — docker.service not enabled."
     warn "To enable systemd in WSL, add the following to /etc/wsl.conf then run 'wsl --shutdown' from Windows:"
     warn "  [boot]"
     warn "  systemd=true"
-    warn "After rebooting WSL, run: sudo systemctl enable --now docker.service"
+    warn "After restarting WSL, run: sudo systemctl enable --now docker.service"
     warn "Alternatively, use Docker Desktop's WSL integration."
   fi
 }
@@ -209,6 +218,17 @@ install_docker() {
 # makepkg refuses to run as root, so we create a temporary unprivileged
 # builder user, run the build as that user, then tear it down.
 PARU_BUILDER_USER="paru-builder"
+PARU_TMP_DIR=""
+
+cleanup_paru_builder() {
+  rm -f "/etc/sudoers.d/${PARU_BUILDER_USER}"
+  if id "$PARU_BUILDER_USER" >/dev/null 2>&1; then
+    userdel -r "$PARU_BUILDER_USER" 2>/dev/null || true
+  fi
+  if [[ -n "$PARU_TMP_DIR" ]]; then
+    rm -rf "$PARU_TMP_DIR"
+  fi
+}
 
 install_paru() {
   section "INSTALLING PARU"
@@ -218,41 +238,44 @@ install_paru() {
     return
   fi
 
-  install_packages base-devel git
+  install_packages base-devel git sudo
 
-  local tmp_dir
-  tmp_dir=$(mktemp -d)
-  chown "$PARU_BUILDER_USER:$PARU_BUILDER_USER" "$tmp_dir" 2>/dev/null || true
+  # Tear down the builder even if the build fails part-way
+  trap cleanup_paru_builder EXIT
 
-  # Create a temporary builder user if it doesn't exist
   if ! id "$PARU_BUILDER_USER" >/dev/null 2>&1; then
     log "Creating temporary builder user: $PARU_BUILDER_USER"
-    useradd -m -G wheel "$PARU_BUILDER_USER"
-    # Allow the builder to use sudo for makepkg -s dependency installs (pacman only)
-    echo "$PARU_BUILDER_USER ALL=(ALL) NOPASSWD: /usr/bin/pacman" \
-      > "/etc/sudoers.d/${PARU_BUILDER_USER}"
-    chmod 440 "/etc/sudoers.d/${PARU_BUILDER_USER}"
+    useradd -m "$PARU_BUILDER_USER"
   fi
 
-  chown -R "$PARU_BUILDER_USER:$PARU_BUILDER_USER" "$tmp_dir"
+  # Allow the builder to install makepkg -s dependencies (pacman only)
+  echo "$PARU_BUILDER_USER ALL=(ALL) NOPASSWD: /usr/bin/pacman" \
+    > "/etc/sudoers.d/${PARU_BUILDER_USER}"
+  chmod 440 "/etc/sudoers.d/${PARU_BUILDER_USER}"
 
+  PARU_TMP_DIR=$(mktemp -d)
+  chown "$PARU_BUILDER_USER:$PARU_BUILDER_USER" "$PARU_TMP_DIR"
+
+  # cd into the build dir first: the builder can't read the caller's cwd
+  # (usually inside a 700 home directory), which makes git/makepkg fail.
   log "Cloning paru repository"
-  sudo -u "$PARU_BUILDER_USER" git clone \
-    https://aur.archlinux.org/paru.git "$tmp_dir"
+  (cd "$PARU_TMP_DIR" && sudo -u "$PARU_BUILDER_USER" -H \
+    git clone https://aur.archlinux.org/paru.git .)
 
   log "Building paru (as $PARU_BUILDER_USER)"
-  sudo -u "$PARU_BUILDER_USER" bash -c \
-    "cd \"$tmp_dir\" && makepkg -s --noconfirm"
+  (cd "$PARU_TMP_DIR" && sudo -u "$PARU_BUILDER_USER" -H \
+    makepkg -s --noconfirm)
 
   log "Installing paru package"
-  pacman -U --noconfirm "$tmp_dir"/paru-*.pkg.tar.zst
+  local pkg
+  pkg=$(find "$PARU_TMP_DIR" -maxdepth 1 -name 'paru-*.pkg.tar.*' \
+    ! -name 'paru-debug-*' ! -name '*.sig' | head -n 1)
+  [[ -n "$pkg" ]] || error "paru package not found after build"
+  pacman -U --noconfirm "$pkg"
 
-  # Tear down the temporary builder user and its sudoers entry
   log "Removing temporary builder user"
-  rm -f "/etc/sudoers.d/${PARU_BUILDER_USER}"
-  userdel -r "$PARU_BUILDER_USER" 2>/dev/null || true
-
-  rm -rf "$tmp_dir"
+  cleanup_paru_builder
+  trap - EXIT
 
   success "paru installed"
 }
@@ -268,10 +291,10 @@ copy_config() {
   rsync -av "$DOTFILES_REPO/tmux"      "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/nvim"      "$CONFIG_DIR"
   rsync -av "$DOTFILES_REPO/fastfetch" "$CONFIG_DIR"
-  mkdir -p "$CONFIG_DIR/starship"
-  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/starship/"
+  # starship reads ~/.config/starship.toml by default
+  rsync -av "$DOTFILES_REPO/starship/starship.toml" "$CONFIG_DIR/"
 
-  chown -R "$ACTUAL_USER:$(id -gn "$ACTUAL_USER")" "$CONFIG_DIR"
+  fix_owner "$CONFIG_DIR"
 
   success "Configuration files installed"
 }
@@ -282,9 +305,10 @@ copy_config() {
 setup_git() {
   section "GIT SETUP"
 
-  git config --global user.email "thanhlongvu156@gmail.com"
-  git config --global user.name "have2b"
-  git config --global core.pager "cat"
+  # Run as the real user so this lands in their ~/.gitconfig, not /root's
+  as_user git config --global user.email "thanhlongvu156@gmail.com"
+  as_user git config --global user.name "have2b"
+  as_user git config --global core.pager "cat"
 
   success "Git setup completed"
 }
@@ -297,10 +321,15 @@ main() {
 
   check_root
 
+  if [[ "$ACTUAL_USER" == "root" ]]; then
+    warn "Running for the root user. Create a regular user and run this with sudo from that user to set up their environment instead."
+  fi
+
   if [[ ! -d "$DOTFILES_REPO" ]]; then
     error "Dotfiles repo not found at $DOTFILES_REPO"
   fi
 
+  update_system
   setup_zsh
   setup_misc
   setup_tmux
